@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ClassHub</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%2064%2064%27%3E%3Crect%20width=%2764%27%20height=%2764%27%20rx=%2716%27%20fill=%27%2316233f%27/%3E%3Crect%20x=%2710%27%20y=%2712%27%20width=%2744%27%20height=%2734%27%20rx=%2713%27%20fill=%27%23f6c944%27/%3E%3Cpath%20d=%27M21%2044l-5%2011%2016-11z%27%20fill=%27%23f6c944%27/%3E%3Ctext%20x=%2732%27%20y=%2738%27%20font-size=%2725%27%20font-weight=%27800%27%20text-anchor=%27middle%27%20font-family=%27Arial,Helvetica,sans-serif%27%20fill=%27%2316233f%27%3EH%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#16233f">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f5fa;--card:#fff;--ink:#16233f;--mute:#667392;--line:#e3e8f2;--hl:#f6c944;--hl2:#fff4cf;--hlink:#16233f;--red:#d1424f;--ok:#2a8a5b;--sh:0 1px 2px rgba(22,35,63,.06),0 8px 22px rgba(22,35,63,.06);--r:16px}
+:root[data-theme="dark"]{--bg:#0e1626;--card:#16213a;--ink:#edf1fb;--mute:#9aa8c6;--line:#243252;--hl2:#3a3317;--red:#f0737d;--ok:#5fc08a;--sh:none}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:17px;line-height:1.5;padding-top:env(safe-area-inset-top,0px);-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+input,select,textarea{width:100%;padding:.7rem .85rem;min-height:46px;border:1.5px solid var(--line);border-radius:12px;background:var(--card)}
+input:focus,select:focus,textarea:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px var(--hl)}
+input[type=checkbox]{width:1.4rem;height:1.4rem;min-height:0;padding:0;accent-color:var(--ink)}
+textarea{resize:vertical;min-height:90px}
+:focus-visible{outline:3px solid var(--hl);outline-offset:2px}
+button{cursor:pointer;border:1.5px solid var(--line);background:var(--card);border-radius:12px;padding:.55rem 1rem;min-height:44px;font-weight:600}
+button:active{transform:scale(.97)}
+button.pri{background:var(--hl);color:var(--hlink);border-color:var(--hl);font-weight:700}
+button.sm{padding:.2rem .75rem;min-height:34px;font-size:.88rem;border-radius:10px}
+button.del{color:var(--red);border-color:var(--red);background:transparent}
+button:disabled{opacity:.45;cursor:default}
+h1,h2,h3{margin:0;line-height:1.2}
+h2{font-size:1.9rem;font-weight:800;margin-bottom:1rem;letter-spacing:-.01em}
+h3{font-size:1.08rem;font-weight:700}
+label{display:block;font-weight:600;font-size:.9rem;margin:.9rem 0 .3rem}
+p{margin:.5rem 0}
+.login{max-width:430px;margin:0 auto;padding:11vh 1.2rem 2rem}
+.login h1{font-size:3.2rem;font-weight:800;margin-bottom:.4rem}
+.login h1 span,nav .logo span,.top .logo span{background:var(--hl);color:#16233f;padding:0 .25em;border-radius:8px}
+.login p{color:var(--mute)}
+#lf{background:var(--card);padding:1.2rem;border-radius:var(--r);box-shadow:var(--sh);margin:1.2rem 0}
+#lf button{width:100%}
+.err{color:var(--red);font-weight:600;min-height:1.5rem}
+.app{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+nav{background:#16233f;color:#edf1fb;padding:1.3rem .9rem;display:flex;flex-direction:column;gap:.25rem;position:sticky;top:0;height:100vh;align-self:start;overflow-y:auto}
+nav .logo{font-weight:800;font-size:1.5rem;padding:0 .6rem 1rem}
+nav button{border:0;background:transparent;text-align:left;padding:.65rem .8rem;color:inherit;border-radius:12px;display:flex;gap:.7rem;align-items:center;min-height:44px}
+nav button.on{background:var(--hl);color:#16233f}
+nav button .sh,nav .more{display:none}
+nav .me{margin-top:auto;font-size:.88rem;padding:.8rem .6rem 0;border-top:1px solid rgba(255,255,255,.15)}
+nav .me button{margin-top:.5rem;border:1px solid rgba(255,255,255,.4);min-height:34px;padding:.15rem .8rem}
+.ic{width:1.35rem;height:1.35rem;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.badge{background:var(--red);color:#fff;border-radius:99px;font-size:.72rem;padding:0 .45rem;margin-left:auto;font-weight:700}
+main{padding:2rem 2rem 3rem;max-width:840px;width:100%}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:.9rem;box-shadow:var(--sh)}
+.card.pin{background:var(--hl2);border-color:var(--hl)}
+.card h3+p{margin-top:.4rem}
+.row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.sp{margin-left:auto}
+.meta{font-size:.86rem;color:var(--mute)}
+.tag{font-size:.78rem;font-weight:700;background:var(--bg);border-radius:99px;padding:.1rem .7rem;color:var(--mute)}
+.chips{display:flex;gap:.45rem;overflow-x:auto;padding-bottom:.3rem;margin:0 0 1rem;scrollbar-width:none}
+.chips button{border-radius:99px;padding:.2rem .95rem;min-height:38px;font-size:.92rem;white-space:nowrap;flex:none}
+.chips button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+details.new{padding:0;overflow:hidden}
+details.new>summary{list-style:none;cursor:pointer;font-weight:700;padding:.9rem 1.1rem;display:flex;gap:.5rem;align-items:center;margin:0}
+details.new>summary::-webkit-details-marker{display:none}
+details.new[open]>summary{background:var(--hl);color:var(--hlink)}
+details.new>form{padding:.2rem 1.1rem 1.1rem}
+details summary{cursor:pointer;font-weight:600;font-size:.92rem;margin-top:.5rem}
+.hero{margin-bottom:1rem}
+.hero h2{margin:.1rem 0 0}
+.item{display:flex;gap:.6rem;align-items:center;padding:.55rem 0;border-top:1px solid var(--line)}
+.item:first-of-type{border-top:0}
+.menu{display:grid;gap:.6rem}
+.menu button{display:flex;gap:.8rem;align-items:center;text-align:left;font-size:1.02rem;padding:.85rem 1rem}
+.chat{height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:.55rem;padding:.9rem;background:var(--card);border:1px solid var(--line);border-radius:var(--r);margin-bottom:.8rem}
+.msg{max-width:82%;padding:.5rem .85rem;border-radius:18px 18px 18px 6px;background:var(--bg);overflow-wrap:anywhere}
+.msg.mine{align-self:flex-end;background:var(--ink);color:var(--bg);border-radius:18px 18px 6px 18px}
+.msg.mine .meta{color:inherit;opacity:.7}
+.msg.rapp{background:var(--hl);color:var(--hlink);font-weight:600}
+.msg.rapp .meta{color:inherit;opacity:.75}
+.msg .meta{font-size:.76rem}
+.acts{display:flex;gap:.3rem;margin-top:.25rem}
+[data-form=msg] input{flex:1;border-radius:99px}
+[data-form=msg] button{border-radius:99px}
+.seats{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:.5rem;margin-top:.8rem}
+.seat{border:1.5px dashed var(--line);border-radius:12px;padding:.45rem .7rem;font-size:.92rem;display:flex;gap:.4rem;align-items:center;justify-content:space-between}
+.seat.taken{border-style:solid;background:var(--bg)}
+.seat.you{border-color:var(--ok);color:var(--ok);font-weight:700}
+ol.ord{margin:.8rem 0 0;padding-left:1.4rem}
+ol.ord li{margin-bottom:.35rem}
+ol.ord li.you{color:var(--ok);font-weight:700}
+.swap{background:var(--hl2);border-radius:12px;padding:.55rem .8rem;margin-top:.7rem;font-size:.92rem}
+.todo{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap}
+.todo.done .tt{text-decoration:line-through;color:var(--mute)}
+.late{color:var(--red);font-weight:700}
+.empty{color:var(--mute);padding:1.4rem;border:1.5px dashed var(--line);border-radius:var(--r);text-align:center;margin-bottom:.9rem}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.top{display:none;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.top .logo{font-weight:800;font-size:1.3rem}
+.ov{position:fixed;inset:0;background:rgba(10,15,30,.55);display:flex;align-items:flex-end;justify-content:center;padding:1rem;z-index:20}
+.ov .card{width:100%;max-width:440px;margin:0}
+.perm{display:flex;gap:.7rem;align-items:center;margin:.4rem 0;font-size:.92rem}
+.perm label{margin:0;font-weight:400}
+.log{display:flex;gap:.8rem;padding:.55rem 0;border-bottom:1px solid var(--line);font-size:.94rem}
+.log .meta{white-space:nowrap}
+@media (max-width:760px){
+body{font-size:16.5px}
+.app{display:block}
+nav{position:fixed;bottom:0;left:0;right:0;top:auto;height:auto;flex-direction:row;gap:0;padding:.35rem .3rem calc(.35rem + env(safe-area-inset-bottom,0px));z-index:5;overflow:visible;background:var(--card);color:var(--mute);border-top:1px solid var(--line)}
+nav .logo,nav .me,nav .sec,nav button .lg{display:none}
+nav button{flex:1;flex-direction:column;gap:.15rem;justify-content:center;padding:.3rem .1rem;font-size:.68rem;min-height:52px;position:relative;border-radius:14px;min-width:0}
+nav button .sh,nav .more{display:flex}
+nav button .sh{font-weight:600}
+nav button.on{background:transparent;color:var(--ink)}
+nav button.on .ic{background:var(--hl);border-radius:10px;padding:.25rem;width:2.1rem;height:1.6rem;stroke:#16233f}
+nav .badge{position:absolute;top:2px;right:18%;margin:0}
+main{padding:1rem 1rem 6.5rem}
+.top{display:flex}
+h2{font-size:1.65rem}
+.chat{height:calc(100dvh - 330px);min-height:240px}
+.g2{grid-template-columns:1fr}
+}
+</style>
+<style id="glass">
+:root{--glass:rgba(255,255,255,.9);--gline:rgba(22,35,63,.09);--gsh:0 4px 18px rgba(22,35,63,.07);--page:#fff}
+:root[data-theme="dark"]{--glass:rgba(30,44,76,.75);--gline:rgba(255,255,255,.12);--gsh:0 4px 18px rgba(0,0,0,.3);--page:#0e1626}
+html{background:var(--page)}
+body{background:transparent;position:relative}
+#root{position:relative;z-index:1}
+.card,.chat{background:var(--glass);border:1px solid var(--gline);box-shadow:var(--gsh);-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%)}
+.card.pin{background:rgba(246,201,68,.38)}
+details.new>form{background:transparent}
+button{-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+nav{background:rgba(22,35,63,.86);-webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px)}
+.tag{background:rgba(120,135,170,.18)}
+.chips button{background:var(--glass)}
+.chips button.on{background:var(--ink)}
+.ov{-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.sec-t{margin:1.4rem 0 .7rem;font-size:1.05rem}
+.nitem{display:flex;gap:.7rem;align-items:center;width:100%;text-align:left;border:0;background:transparent;border-top:1px solid rgba(120,135,170,.22);border-radius:0;padding:.65rem .1rem;min-height:48px;font-weight:500;-webkit-backdrop-filter:none;backdrop-filter:none}
+.nitem:first-of-type{border-top:0}
+.nitem .dot{width:2.1rem;height:2.1rem;border-radius:50%;display:grid;place-items:center;background:var(--hl);color:#16233f;flex:none;box-shadow:inset 0 2px 3px rgba(255,255,255,.7)}
+.nitem .dot .ic{width:1.1rem;height:1.1rem}
+.nitem .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(125px,1fr));gap:.9rem}
+.tile{position:relative;aspect-ratio:1;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;text-align:center;font-weight:700;font-size:.98rem;padding:.6rem;background:var(--glass);border:1px solid var(--gline);box-shadow:var(--gsh);-webkit-backdrop-filter:blur(20px) saturate(170%);backdrop-filter:blur(20px) saturate(170%);overflow:hidden;transition:transform .2s}
+.tile::before{content:"";position:absolute;inset:0;border-radius:inherit;background:radial-gradient(120% 70% at 22% 0%,rgba(255,255,255,.7),transparent 58%);pointer-events:none}
+.tile:hover{transform:translateY(-3px)}
+.tile .ico{position:relative;width:3.4rem;height:3.4rem;border-radius:50%;display:grid;place-items:center;background:var(--hl);color:#16233f;box-shadow:inset 0 3px 5px rgba(255,255,255,.75),0 4px 10px rgba(22,35,63,.15)}
+.tile .ico .ic{width:1.7rem;height:1.7rem}
+.tile:nth-child(4n+2) .ico{background:#8fc4ff}
+.tile:nth-child(4n+3) .ico{background:#86e3bd}
+.tile:nth-child(4n+4) .ico{background:#ffa9cf}
+.tile.out{color:var(--red)}
+.tile.out .ico{background:#ffc9ce}
+.tile .badge{position:absolute;top:.7rem;right:.8rem;margin:0}
+@media (max-width:760px){
+nav{background:var(--glass);border-top:1px solid var(--gline);-webkit-backdrop-filter:blur(24px) saturate(180%);backdrop-filter:blur(24px) saturate(180%)}
+.tiles{grid-template-columns:repeat(3,1fr);gap:.7rem}
+.tile{border-radius:26px;font-size:.84rem}
+.tile .ico{width:3rem;height:3rem}
+}
+
+.av{width:2.8rem;height:2.8rem;border-radius:50%;display:grid;place-items:center;background:var(--hl);color:#16233f;font-weight:800;flex:none;box-shadow:inset 0 2px 3px rgba(255,255,255,.7)}
+.cond{margin-top:.7rem}
+.bar{height:12px;border-radius:99px;background:rgba(120,135,170,.22);overflow:hidden;margin:.4rem 0}
+.bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:.3rem .8rem;margin-top:.6rem;font-size:.92rem}
+.seg{display:flex;gap:.6rem}
+.seg button{flex:1}
+.seg button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:760px){.stats{grid-template-columns:1fr}}
+.ttg{overflow-x:auto;margin-bottom:.8rem}
+.ttg table{width:100%;border-collapse:separate;border-spacing:0;background:var(--glass);border:1px solid var(--gline);border-radius:var(--r);box-shadow:var(--gsh);overflow:hidden}
+.ttg th,.ttg td{padding:.5rem .6rem;border-bottom:1px solid rgba(120,135,170,.18);vertical-align:top;font-size:.88rem;text-align:left}
+.ttg thead th{font-size:.8rem;color:var(--mute)}
+.ttg th.today,.ttg td.today{background:var(--hl2)}
+.ttg tbody th{white-space:nowrap;font-weight:700;width:3.6rem}
+.ls{display:flex;flex-direction:column;gap:.1rem;align-items:flex-start;margin-bottom:.3rem}
+.ls.cancel b{text-decoration:line-through;color:var(--mute)}
+.ls.subst{border-left:3px solid var(--hl);padding-left:.4rem}
+.ttd{display:none}
+.lesson{display:flex;gap:1rem;align-items:flex-start}
+@media (max-width:760px){.ttg{display:none}.ttd{display:block}}
+</style>
+</head>
+<body>
+<div id="root"><div class="login"><p>Caricamento…</p></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://waptorknqgaleykarzze.supabase.co',SB_KEY='sb_publishable_IvprUxR28_TuZ09u25R9GA_JOGgu8Yg';
+const $=s=>document.querySelector(s);
+const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+if(!window.supabase){document.getElementById('root').innerHTML='<div class="login"><h1>ClassHub</h1><p>Impossibile caricare la libreria di Supabase. Controlla la connessione e riprova.</p></div>';throw new Error('supabase-js non caricato')}
+try{document.documentElement.dataset.theme=localStorage.getItem('ch-theme')==='dark'?'dark':'light'}catch(e){document.documentElement.dataset.theme='light'}
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const ROLES={admin:'Amministratore',mod:'Moderatore',rapp:'Rappresentante',alunno:'Alunno'};
+const SUBJ=['Italiano','Matematica','Storia','Inglese','Scienze','Fisica'];
+const TBL={message:'messages',note:'notes',todo:'todos',post:'posts'};
+const KL={message:'il messaggio',note:'l\'appunto',todo:'il promemoria'},KT={message:'Messaggio',note:'Appunto',todo:'Promemoria'};
+const PL={post:'Pubblicare avvisi in bacheca',msg:'Scrivere messaggi in chat',sess:'Creare e gestire interrogazioni',note:'Caricare appunti',todo:'Creare promemoria',book:'Prenotare e scambiare turni'};
+const WHY=['Spam','Linguaggio offensivo','Contenuto inappropriato','Altro'];
+const MAXMB=5,TYPES=['application/pdf','image/png','image/jpeg','image/webp'];
+const TODAY=new Date().toISOString().slice(0,10);
+const S={me:null,perm:{},view:'oggi',cat:'Tutte',sub:'Tutte',q:'',rep:null,busy:false,err:'',ttOff:0,ttDay:null,tt:null,ttErr:'',settings:{timetable_class:'3Z'},
+dir:{},posts:[],reads:[],msgs:[],sess:[],slots:[],swaps:[],notes:[],likes:[],todos:[],done:[],reports:[],rItems:{},log:[],users:[],perms:{}};
+const isoL=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+const DAYS=['Lun','Mar','Mer','Gio','Ven','Sab'];
+const nm=id=>(S.dir[id]||{}).name||'utente rimosso',roleOf=id=>(S.dir[id]||{}).role;
+const isA=()=>S.me.role==='admin',staff=()=>['admin','mod','rapp'].includes(S.me.role),seeLog=()=>['admin','rapp'].includes(S.me.role),can=k=>isA()||!!S.perm[k];
+const fmt=d=>new Date(d+'T12:00:00').toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});
+const hm=t=>new Date(t).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+const dm=t=>new Date(t).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).replace(',','');
+const q=async p=>{const{data,error}=await p;if(error)throw error;return data};
+const errMsg=e=>e.code==='42501'?'Non hai l\'autorizzazione per questa azione.':e.code==='23505'?'Esiste già.':(e.message||String(e));
+const fn=async body=>{const{data,error}=await sb.functions.invoke('quick-responder',{body});
+if(error){if(error.name==='FunctionsFetchError')throw new Error('La funzione "quick-responder" non risponde: controlla che sia pubblicata con questo nome esatto.');
+let m=error.message;try{const j=await error.context.json();m=j.error||j.message||j.msg||m}catch(_){}throw new Error(m)}return data};
+const safe=n=>n.replace(/[^\w.\-]+/g,'_');
+
+const LOAD={
+settings:async()=>{try{(await q(sb.from('settings').select('*'))).forEach(r=>S.settings[r.key]=r.value)}catch(e){console.error(e)}},
+tt:async()=>{const d=new Date();d.setDate(d.getDate()+S.ttOff*7+(S.ttOff===0&&d.getDay()===0?1:0));
+try{S.tt=await fn({action:'timetable',className:S.settings.timetable_class,date:isoL(d)});S.ttErr=''}catch(e){S.tt=null;S.ttErr=e.message||String(e)}},
+subjects:async()=>{try{const r=await q(sb.from('subjects').select('name').order('id'));SUBJ.splice(0,SUBJ.length,...r.map(x=>x.name))}catch(e){console.error(e)}},
+dir:async()=>{S.dir={};(await q(sb.from('directory').select('*'))).forEach(u=>S.dir[u.id]=u)},
+posts:async()=>{S.posts=await q(sb.from('posts').select('*').order('created_at',{ascending:false}));S.reads=await q(sb.from('post_reads').select('*'))},
+msgs:async()=>{S.msgs=(await q(sb.from('messages').select('*').order('created_at',{ascending:false}).limit(200))).reverse()},
+sess:async()=>{S.sess=await q(sb.from('exam_sessions').select('*').order('session_date'));S.slots=await q(sb.from('exam_slots').select('*').order('position'));S.swaps=await q(sb.from('swap_requests').select('*'))},
+notes:async()=>{S.notes=await q(sb.from('notes').select('*').order('created_at',{ascending:false}));S.likes=await q(sb.from('note_likes').select('*'))},
+todos:async()=>{S.todos=await q(sb.from('todos').select('*').order('due'));S.done=await q(sb.from('todo_done').select('*'))},
+reports:async()=>{if(!staff())return;S.reports=await q(sb.from('reports').select('*').order('created_at'));S.rItems={};
+for(const[k,t]of[['message','messages'],['note','notes'],['todo','todos']]){const ids=[...new Set(S.reports.filter(r=>r.kind===k).map(r=>r.item_id))];
+if(ids.length)(await q(sb.from(t).select('*').in('id',ids))).forEach(x=>S.rItems[k+x.id]=x)}},
+log:async()=>{if(!seeLog())return;S.log=await q(sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(150))},
+users:async()=>{if(!isA())return;S.users=await q(sb.from('profiles').select('*').order('name'));S.perms={};(await q(sb.from('permissions').select('*'))).forEach(p=>S.perms[p.user_id]=p)}
+};
+const VLOAD={orario:['tt'],oggi:['posts','todos','sess','tt'],altro:['reports'],bacheca:['posts'],messaggi:['msgs'],interrogazioni:['sess'],appunti:['notes'],promemoria:['todos'],segnalazioni:['reports'],cronologia:['log'],utenti:['users'],classe:[],impostazioni:[]};
+const loadAll=async()=>{await Promise.all(['subjects','dir','posts','msgs','sess','notes','todos','reports','log','users'].map(k=>LOAD[k]()));LOAD.settings().then(()=>LOAD.tt()).then(()=>{if(S.me)render()})};
+async function refreshView(){try{if(S.view==='oggi'&&S.ttOff!==0){S.ttOff=0;S.tt=null}await Promise.all([LOAD.subjects(),LOAD.dir(),LOAD.reports(),...VLOAD[S.view].map(k=>LOAD[k]())])}catch(e){console.error(e)}}
+
+async function boot(){
+const{data:{session}}=await sb.auth.getSession();
+if(!session)return login();
+await enter(session.user.id)}
+async function enter(uid){
+try{S.me=await q(sb.from('profiles').select('*').eq('id',uid).single());S.perm=await q(sb.from('permissions').select('*').eq('user_id',uid).single())}
+catch(e){await sb.auth.signOut();S.me=null;S.err='Profilo non trovato: contatta l\'amministratore.';return login()}
+if(!S.me.must_change_password){try{await loadAll()}catch(e){alert(errMsg(e))}}
+subscribe();S.view='oggi';render()}
+function subscribe(){sb.removeAllChannels();
+sb.channel('rt-msgs').on('postgres_changes',{event:'*',schema:'public',table:'messages'},async()=>{
+if(!S.me||S.me.must_change_password)return;await LOAD.msgs();const c=$('#chat');if(c&&S.view==='messaggi'){c.innerHTML=chatHTML();c.scrollTop=c.scrollHeight}}).subscribe()}
+
+function login(){
+$('#root').innerHTML=`<div class="login"><h1>Class<span>Hub</span></h1>
+<p>Bacheca, interrogazioni, appunti e promemoria della classe in un unico posto.</p>
+<form id="lf"><label for="em">Email</label><input id="em" type="email" required autocomplete="username">
+<label for="pw">Password</label><input id="pw" type="password" required autocomplete="current-password">
+<div class="err" role="alert">${esc(S.err)}</div><button class="pri" type="submit">Accedi</button></form>
+<p class="meta">Non c'è registrazione libera: gli account li crea l'amministratore. Se hai dimenticato la password, chiedigli di reimpostarla.</p></div>`;
+$('#lf').onsubmit=async e=>{e.preventDefault();const b=e.target.querySelector('button');b.disabled=true;
+const{data,error}=await sb.auth.signInWithPassword({email:$('#em').value.trim(),password:$('#pw').value});
+if(error){S.err='Email o password non corrette.';return login()}
+S.err='';await enter(data.user.id)}}
+
+const pwForm=()=>`<form class="card" data-form="pw"><b>Cambia password</b>
+<label>Password attuale</label><input name="cur" type="password" required autocomplete="current-password">
+<label>Nuova password (almeno 8 caratteri)</label><input name="nw" type="password" required minlength="8" autocomplete="new-password">
+<label>Ripeti la nuova password</label><input name="rp" type="password" required minlength="8" autocomplete="new-password">
+<p><button class="pri" type="submit">Salva password</button></p></form>`;
+
+const IC={oggi:'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',bacheca:'M9 4h6v3H9z M7 5H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2 M8 12h8 M8 16h5',messaggi:'M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z',interrogazioni:'M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4',appunti:'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11',promemoria:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M8 12l3 3 5-6',segnalazioni:'M5 21V4 M5 4h12l-2 4 2 4H5',cronologia:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2',utenti:'M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1 M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M21 20v-1a4 4 0 0 0-3-3.9 M16 4.1a3.5 3.5 0 0 1 0 6.8',impostazioni:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',classe:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.9 M16 3.1a4 4 0 0 1 0 7.8',orario:'M4 4h16v16H4z M4 9h16 M9 9v11 M15 9v11',account:'M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',altro:'M5 12h.01 M12 12h.01 M19 12h.01'};
+const ic=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[k]}"${k==='altro'?' stroke-width="3.5"':''}/></svg>`;
+const PRIM=['oggi','bacheca','messaggi','interrogazioni','appunti'],SEC=['altro','orario','promemoria','segnalazioni','cronologia','utenti','classe','impostazioni'];
+function tabs(){const t=[['oggi','Oggi'],['bacheca','Bacheca'],['messaggi','Messaggi','Chat'],['interrogazioni','Interrogazioni','Interrog.'],['appunti','Appunti'],['orario','Orario'],['promemoria','Promemoria']];
+if(staff())t.push(['segnalazioni','Segnalazioni']);if(seeLog())t.push(['cronologia','Cronologia']);if(isA())t.push(['utenti','Utenti']);t.push(['classe','Classe'],['impostazioni','Impostazioni']);return t}
+const nRep=()=>new Set(S.reports.map(r=>r.kind+r.item_id)).size;
+function render(){
+if(!S.me)return login();
+if(S.me.must_change_password){$('#root').innerHTML=`<div class="login"><h1>Class<span>Hub</span></h1><p>Ciao ${esc(S.me.name)}, è il tuo primo accesso: scegli una nuova password per continuare.</p>${pwForm()}<button data-act="logout">Esci</button></div>`;return}
+const unread=S.posts.filter(p=>!S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id)).length,nr=staff()?nRep():0;
+const nav=tabs().map(([k,l,s])=>{const b=k==='bacheca'?unread:k==='segnalazioni'?nr:0;
+return `<button data-go="${k}" class="${S.view===k?'on':''} ${PRIM.includes(k)?'':'sec'}">${ic(k)}<span class="lg">${l}</span><span class="sh">${s||l}</span>${b?`<span class="badge">${b}</span>`:''}</button>`}).join('')
++`<button data-go="altro" class="more ${SEC.includes(S.view)?'on':''}">${ic('altro')}<span class="sh">Altro</span>${nr?`<span class="badge">${nr}</span>`:''}</button>`;
+const ov=S.rep?`<div class="ov"><form class="card" data-form="report" role="dialog" aria-label="Segnala"><b>Segnala ${KL[S.rep.k]}</b>
+<label>Motivo</label><select name="why">${WHY.map(w=>`<option>${w}</option>`).join('')}</select>
+<label>Note (facoltative)</label><textarea name="note" maxlength="200"></textarea>
+<p class="row"><button class="pri" type="submit">Invia segnalazione</button><button type="button" data-act="repclose">Annulla</button></p></form></div>`:'';
+$('#root').innerHTML=`<div class="app"><nav><div class="logo">Class<span>Hub</span></div>${nav}
+<div class="me"><b>${esc(S.me.name)}</b><br>${ROLES[S.me.role]}<br><button data-act="logout">Esci</button></div></nav>
+<main><div class="top"><div class="logo">Class<span>Hub</span></div><span class="meta">${esc(S.me.name)} · ${ROLES[S.me.role]}</span></div>${VIEWS[S.view]()}</main></div>${ov}`;
+const c=$('#chat');if(c)c.scrollTop=c.scrollHeight}
+
+const repBtn=(k,i)=>`<button class="sm" data-act="report" data-type="${k}" data-id="${i}">Segnala</button>`;
+const delBtn=(a,i,l='Elimina')=>`<button class="sm del" data-act="${a}" data-id="${i}">${l}</button>`;
+const noPerm=t=>`<div class="empty" style="margin-bottom:1rem">L'amministratore ha disattivato per te l'autorizzazione a ${t}.</div>`;
+
+function chatHTML(){return S.msgs.map(m=>{const mine=m.author_id===S.me.id,rp=roleOf(m.author_id)==='rapp';
+return `<div class="msg ${mine?'mine':''} ${rp?'rapp':''}"><div class="meta">${esc(nm(m.author_id))}${rp?' · Rappresentante':''} · ${hm(m.created_at)}</div>${esc(m.body)}
+<div class="acts">${mine||staff()?delBtn('delmsg',m.id):''}${mine?'':repBtn('message',m.id)}</div></div>`}).join('')||'<div class="empty">Nessun messaggio.</div>'}
+function noteList(){
+const t=S.q.trim().toLowerCase();
+const l=S.notes.filter(n=>(S.sub==='Tutte'||n.subject===S.sub)&&(!t||(n.title+' '+n.subject+' '+n.file_name+' '+nm(n.author_id)).toLowerCase().includes(t)));
+return l.map(n=>{const lk=S.likes.some(x=>x.note_id===n.id&&x.user_id===S.me.id),cnt=S.likes.filter(x=>x.note_id===n.id).length,own=n.author_id===S.me.id;
+return `<article class="card"><div class="row"><h3>${esc(n.title)}</h3><span class="tag sp">${esc(n.subject)}</span></div>
+<div class="row"><span class="meta">${esc(n.file_name)} · caricato da ${esc(nm(n.author_id))}</span><span class="sp row">
+<button class="sm" data-act="openfile" data-id="${n.id}">Apri</button>
+<button class="sm ${lk?'pri':''}" data-act="like" data-id="${n.id}">Utile · ${cnt}</button>
+${own||staff()?delBtn('delnote',n.id,'Rimuovi'):''}${own?'':repBtn('note',n.id)}</span></div></article>`}).join('')||`<div class="empty">${t?'Nessun risultato per «'+esc(S.q)+'».':'Ancora nessun appunto per questa materia.'}</div>`}
+
+const conduct=u=>{const r=Math.min(25,(u.msgs_removed||0)+(u.notes_removed||0)),lv=25-r,tx=r===0?'Ottima':r<=5?'Buona':r<=12?'Da migliorare':r<=24?'Scarsa':'Minima';
+return `<div class="cond"><div class="row"><b>Condotta</b><span class="meta sp">${tx}</span></div><div class="bar" role="progressbar" aria-label="Livello di condotta" aria-valuemin="0" aria-valuemax="25" aria-valuenow="${lv}"><i style="width:${lv/25*100}%;background:hsl(${Math.round(125*lv/25)},65%,45%)"></i></div><div class="meta">Livello ${lv} su 25 · ${r} ${r===1?'contenuto eliminato':'contenuti eliminati'}</div></div>`};
+const init=n=>esc((n||'?').slice(0,1).toUpperCase());
+const VIEWS={
+oggi(){
+const hr=new Date().getHours(),g=hr<12?'Buongiorno':hr<18?'Ciao':'Buonasera';
+const unread=S.posts.filter(p=>!S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id)).length,nr=staff()?nRep():0;
+const td=S.todos.filter(t=>!S.done.some(d=>d.todo_id===t.id&&d.user_id===S.me.id)).sort((a,b)=>a.due.localeCompare(b.due)).slice(0,4);
+const my=S.sess.map(s=>({s,x:S.slots.find(x=>x.session_id===s.id&&x.user_id===S.me.id)})).filter(o=>o.x&&o.s.session_date>=TODAY);
+const L=[],now=Date.now(),soon=new Date(now+3*864e5).toISOString().slice(0,10);
+S.posts.filter(p=>!S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id)).forEach(p=>L.push({ts:Date.parse(p.created_at),k:'bacheca',t:'Nuovo avviso: '+p.title}));
+S.swaps.filter(w=>w.to_user===S.me.id).forEach(w=>{const s=S.sess.find(x=>x.id===w.session_id);L.push({ts:Date.parse(w.created_at),k:'interrogazioni',t:nm(w.from_user)+' ti propone uno scambio di turno'+(s?' ('+s.subject+')':'')})});
+my.filter(o=>o.s.session_date<=soon).forEach(o=>L.push({ts:now,nt:1,k:'interrogazioni',t:'Interrogazione di '+o.s.subject+': '+fmt(o.s.session_date)}));
+S.todos.filter(t=>t.due<TODAY&&!S.done.some(d=>d.todo_id===t.id&&d.user_id===S.me.id)).slice(0,2).forEach(t=>L.push({ts:now-1,nt:1,k:'promemoria',t:'Scaduto: '+t.title}));
+const lm=[...S.msgs].reverse().find(m=>m.author_id!==S.me.id);
+if(lm&&now-Date.parse(lm.created_at)<864e5)L.push({ts:Date.parse(lm.created_at),k:'messaggi',t:nm(lm.author_id)+': '+lm.body.slice(0,60)});
+if(nr)L.push({ts:now,nt:1,k:'segnalazioni',t:nr+(nr===1?' segnalazione da gestire':' segnalazioni da gestire')});
+L.sort((a,b)=>b.ts-a.ts);
+const tl=S.tt&&S.ttOff===0?S.tt.periods.filter(p=>p.date===isoL(new Date())).sort((a,b)=>a.start.localeCompare(b.start)):[];
+const ago=ts=>{const m=(Date.now()-ts)/6e4;return m<1?'adesso':m<60?Math.round(m)+' min fa':m<1440?Math.round(m/60)+' h fa':dm(ts)};
+const tiles=tabs().filter(([k])=>k!=='oggi').map(([k,l])=>{const n=k==='bacheca'?unread:k==='segnalazioni'?nr:0;return `<button class="tile" data-go="${k}"><span class="ico">${ic(k)}</span><span>${l}</span>${n?`<span class="badge">${n}</span>`:''}</button>`}).join('')
++`<button class="tile out" data-act="logout"><span class="ico">${ic('account')}</span><span>Esci</span></button>`;
+return `<div class="hero"><div class="meta">${new Date().toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'})}</div><h2>${g}, ${esc(S.me.name)}</h2></div>
+<section class="card"><h3 style="margin-bottom:.4rem">Notifiche recenti</h3>
+${L.slice(0,5).map(n=>`<button class="nitem" data-go="${n.k}"><span class="dot">${ic(n.k)}</span><span class="tx">${esc(n.t)}</span>${n.nt?'':`<span class="meta">${ago(n.ts)}</span>`}</button>`).join('')||'<p class="meta">Nessuna novità: è tutto a posto.</p>'}</section>
+<section class="card"><div class="row"><h3>Orario di oggi</h3><button class="sm sp" data-go="orario">Settimana</button></div>
+${tl.map(p=>`<div class="item"><span class="meta">${p.start}</span><b${p.state==='cancel'?' style="text-decoration:line-through;color:var(--mute)"':''}>${esc(p.subject||'—')}</b><span class="meta sp">${esc(p.room)}</span></div>`).join('')||`<p class="meta">${S.tt&&S.ttOff===0?'Oggi non ci sono lezioni.':S.ttErr?'Orario non disponibile al momento.':'Caricamento dell\'orario…'}</p>`}</section>
+<section class="card"><div class="row"><h3>Le tue interrogazioni</h3><button class="sm sp" data-go="interrogazioni">Apri</button></div>
+${my.map(o=>`<div class="item"><b>${esc(o.s.subject)}</b><span class="meta sp">${fmt(o.s.session_date)} · turno ${o.x.position}</span></div>`).join('')||'<p class="meta">Nessuna interrogazione prenotata.</p>'}</section>
+<section class="card"><div class="row"><h3>Da fare</h3><button class="sm sp" data-go="promemoria">Tutti</button></div>
+${td.map(t=>`<div class="item"><input type="checkbox" data-act="tick" data-id="${t.id}" aria-label="Fatto"><span>${esc(t.title)}</span><span class="meta sp ${t.due<TODAY?'late':''}">${t.due<TODAY?'Scaduto · ':''}${fmt(t.due)}</span></div>`).join('')||'<p class="meta">Niente da fare: sei in pari.</p>'}</section>
+<h3 class="sec-t">Tutte le sezioni</h3><div class="tiles">${tiles}</div>`},
+altro(){
+const it=[['orario','Orario'],['promemoria','Promemoria']];if(staff())it.push(['segnalazioni','Segnalazioni']);if(seeLog())it.push(['cronologia','Cronologia']);if(isA())it.push(['utenti','Utenti']);it.push(['classe','Classe'],['impostazioni','Impostazioni']);
+return `<h2>Altro</h2><div class="menu">${it.map(([k,l])=>`<button data-go="${k}">${ic(k)}<span>${l}</span>${k==='segnalazioni'&&nRep()?`<span class="badge">${nRep()}</span>`:''}</button>`).join('')}<button class="del" data-act="logout">${ic('account')}<span>Esci</span></button></div>`},
+bacheca(){
+const cats=['Tutte','Verifiche','Comunicazioni','Gite','Varie'];
+const list=S.posts.filter(p=>S.cat==='Tutte'||p.category===S.cat).sort((a,b)=>(b.pinned-a.pinned)||b.created_at.localeCompare(a.created_at));
+return `<h2>Bacheca</h2>
+${can('post')?`<details class="new card"><summary>＋ Nuovo avviso</summary><form data-form="post"><label>Titolo</label><input name="t" required maxlength="80">
+<label>Testo</label><textarea name="b" required></textarea><div class="g2"><div><label>Categoria</label><select name="cat">${cats.slice(1).map(c=>`<option>${c}</option>`).join('')}</select></div>
+<div><label>In evidenza</label><select name="pin"><option value="0">No</option><option value="1">Sì, fissa in alto</option></select></div></div>
+<p><button class="pri" type="submit">Pubblica avviso</button></p></form></details>`:''}
+<div class="chips">${cats.map(c=>`<button data-cat="${c}" class="${S.cat===c?'on':''}">${c}</button>`).join('')}</div>
+${list.map(p=>{const rd=S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id),n=S.reads.filter(r=>r.post_id===p.id).length;
+return `<article class="card ${p.pinned?'pin':''}"><div class="row"><h3>${esc(p.title)}</h3><span class="tag sp">${esc(p.category)}</span></div>
+<p style="white-space:pre-wrap">${esc(p.body)}</p><div class="row"><span class="meta">${esc(nm(p.author_id))} · ${dm(p.created_at)}${staff()?` · letto da ${n} su ${Object.keys(S.dir).length}`:''}</span>
+<span class="sp row">${rd?'<span class="meta">Letto</span>':`<button class="sm" data-act="read" data-id="${p.id}">Segna come letto</button>`}
+${staff()||p.author_id===S.me.id?delBtn('delpost',p.id):''}</span></div></article>`}).join('')||'<div class="empty">Nessun avviso in questa categoria.</div>'}`},
+
+messaggi(){
+return `<h2>Messaggi</h2><p class="meta">Solo chat di classe: non esistono messaggi privati. I messaggi del rappresentante sono in giallo.</p>
+<div class="chat" id="chat">${chatHTML()}</div>
+${can('msg')?`<form class="row" data-form="msg"><input name="t" required maxlength="300" placeholder="Scrivi un messaggio alla classe" style="flex:1" aria-label="Messaggio" autocomplete="off"><button class="pri" type="submit">Invia</button></form>`:noPerm('scrivere messaggi')}`},
+
+interrogazioni(){
+const m=can('sess'),bk0=can('book');
+return `<h2>Interrogazioni</h2>
+${m?`<details class="new card"><summary>＋ Nuova sessione</summary><form data-form="sess"><div class="g2"><div><label>Materia</label><select name="sub">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></div>
+<div><label>Data</label><input type="date" name="date" required min="${TODAY}"></div></div>
+<div class="g2"><div><label>Modalità</label><select name="mode"><option value="book">Prenotazione libera</option><option value="random">Ordine casuale</option></select></div>
+<div><label>Numero di interrogati</label><input type="number" name="n" min="1" max="12" value="4" required></div></div>
+<p><button class="pri" type="submit">Crea sessione</button></p></form></details>`:''}
+${S.sess.map(s=>{
+const bk=s.mode==='book',sl=S.slots.filter(x=>x.session_id===s.id).sort((a,b)=>a.position-b.position),taken=sl.filter(x=>x.user_id);
+const mine=taken.some(x=>x.user_id===S.me.id),free=sl.length-taken.length;
+const sw=u=>mine&&u&&u!==S.me.id&&bk0?` <button class="sm" data-act="swapreq" data-id="${s.id}" data-who="${esc(u)}">Scambia</button>`:'';
+const pend=S.swaps.filter(w=>w.session_id===s.id);
+return `<article class="card"><div class="row"><h3>${esc(s.subject)}</h3><span class="meta">${fmt(s.session_date)}</span>
+<span class="tag sp">${bk?'Prenotazione libera':'Ordine casuale'}</span></div>
+${bk?`<div class="seats">${sl.map((x,i)=>`<div class="seat ${x.user_id?'taken':''} ${x.user_id===S.me.id?'you':''}"><span>${i+1}. ${x.user_id?esc(nm(x.user_id))+(x.user_id===S.me.id?' (tu)':''):'libero'}</span>${sw(x.user_id)}</div>`).join('')}</div>`
+:taken.length?`<ol class="ord">${taken.map(x=>`<li class="${x.user_id===S.me.id?'you':''}">${esc(nm(x.user_id))}${x.user_id===S.me.id?' (tu)':''}${sw(x.user_id)}</li>`).join('')}</ol>`:'<p class="meta">L\'ordine non è ancora stato estratto.</p>'}
+${pend.map(w=>w.to_user===S.me.id?`<div class="swap">${esc(nm(w.from_user))} propone di scambiare il turno con te. <button class="sm pri" data-act="swapok" data-id="${w.id}">Accetta</button> <button class="sm" data-act="swapno" data-id="${w.id}">Rifiuta</button></div>`
+:`<div class="swap">Hai proposto uno scambio a ${esc(nm(w.to_user))}. <button class="sm" data-act="swapno" data-id="${w.id}">Annulla</button></div>`).join('')}
+<p class="row">${bk?(mine?`<button class="del" data-act="unbook" data-id="${s.id}">Annulla la mia prenotazione</button>`:`<button class="pri" data-act="book" data-id="${s.id}" ${free&&bk0?'':'disabled'}>${!bk0?'Prenotazione non consentita':free?'Prenota un posto':'Completa'}</button>`):''}
+${m?`<span class="sp row">${bk?'':`<button class="sm" data-act="draw" data-id="${s.id}">${taken.length?'Estrai di nuovo':'Estrai ordine'}</button>`}
+<button class="sm" data-act="mode" data-id="${s.id}">Passa a ${bk?'ordine casuale':'prenotazione libera'}</button>${delBtn('delsess',s.id,'Elimina sessione')}</span>`:''}</p></article>`}).join('')||'<div class="empty">Nessuna sessione aperta.</div>'}`},
+
+appunti(){
+return `<h2>Appunti</h2>
+${can('note')?`<details class="new card"><summary>＋ Condividi un appunto</summary><form data-form="note"><label>Titolo</label><input name="t" required maxlength="80">
+<div class="g2"><div><label>Materia</label><select name="sub">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></div>
+<div><label>File</label><input type="file" name="f" accept=".pdf,.png,.jpg,.jpeg,.webp" required></div></div>
+<p class="meta">Formati: PDF, PNG, JPG o WebP. Massimo ${MAXMB} MB.</p>
+<p><button class="pri" type="submit">Carica appunto</button></p></form></details>`:noPerm('caricare appunti')}
+<label for="q">Cerca negli appunti</label><input id="q" type="search" placeholder="Titolo, materia, nome file o autore" value="${esc(S.q)}">
+<div class="chips" style="margin-top:.7rem">${['Tutte',...new Set([...SUBJ,...S.notes.map(n=>n.subject)])].map(s=>`<button data-sub="${s}" class="${S.sub===s?'on':''}">${s}</button>`).join('')}</div>
+<div id="nl">${noteList()}</div>`},
+
+promemoria(){
+const list=S.todos.slice().sort((a,b)=>a.due.localeCompare(b.due));
+return `<h2>Promemoria</h2>
+${can('todo')?`<details class="new card"><summary>＋ Nuovo promemoria</summary><form data-form="todo"><div class="g2"><div><label>Cosa devi fare</label><input name="t" required maxlength="80"></div>
+<div><label>Scadenza</label><input type="date" name="due" required></div></div>
+<label>Visibilità</label><select name="pub"><option value="0">Personale (solo io)</option><option value="1">Pubblico (tutta la classe)</option></select>
+<p><button class="pri" type="submit">Aggiungi</button></p></form></details>`:noPerm('creare promemoria')}
+${list.map(t=>{const dn=S.done.some(d=>d.todo_id===t.id&&d.user_id===S.me.id),late=!dn&&t.due<TODAY,own=t.author_id===S.me.id;
+return `<div class="card todo ${dn?'done':''}"><input type="checkbox" data-act="tick" data-id="${t.id}" ${dn?'checked':''} aria-label="Fatto">
+<div><span class="tt">${esc(t.title)}</span><div class="meta ${late?'late':''}">${late?'Scaduto · ':''}${fmt(t.due)} · ${t.is_public?'pubblico, di '+esc(nm(t.author_id)):own?'personale':'personale di '+esc(nm(t.author_id))}</div></div>
+<span class="sp row">${own||staff()?delBtn('deltodo',t.id):''}${own||!t.is_public?'':repBtn('todo',t.id)}</span></div>`}).join('')||'<div class="empty">Nessun promemoria. Tutto in ordine.</div>'}`},
+
+segnalazioni(){
+const g={};S.reports.forEach(r=>{(g[r.kind+r.item_id]=g[r.kind+r.item_id]||{k:r.kind,id:r.item_id,r:[]}).r.push(r)});
+const l=Object.values(g).filter(x=>S.rItems[x.k+x.id]);
+return `<h2>Segnalazioni</h2><p class="meta">Le ricevono amministratore, rappresentanti e moderatori.</p>
+${l.map(x=>{const it=S.rItems[x.k+x.id];return `<article class="card"><div class="row"><span class="tag">${KT[x.k]}</span><span class="meta">di ${esc(nm(it.author_id))}</span></div>
+<p>${esc(it.title||it.body)}</p>${x.r.map(r=>`<div class="meta">${esc(nm(r.reporter_id))}: <b>${esc(r.reason)}</b>${r.note?' · «'+esc(r.note)+'»':''}</div>`).join('')}
+<p class="row"><span class="sp row"><button class="sm" data-act="repign" data-type="${x.k}" data-id="${x.id}">Ignora</button>
+<button class="sm del" data-act="repdel" data-type="${x.k}" data-id="${x.id}">Elimina contenuto</button></span></p></article>`}).join('')||'<div class="empty">Nessuna segnalazione da gestire.</div>'}`},
+
+cronologia(){
+return `<div class="row" style="margin-bottom:1rem"><h2 style="margin:0">Cronologia azioni</h2>${isA()?'<button class="sm del sp" data-act="clearlog">Elimina cronologia</button>':''}</div><p class="meta">Eliminazioni, moderazione e modifiche a utenti, permessi e interrogazioni. Visibile ad amministratore e rappresentanti.</p>
+<div class="card">${S.log.map(e=>`<div class="log"><span class="meta">${dm(e.created_at)}</span><span>${esc(e.actor_id?nm(e.actor_id):'Sistema')} ${esc(e.text)}</span></div>`).join('')||'<div class="meta">Ancora nessuna azione registrata.</div>'}</div>`},
+
+utenti(){
+return `<h2>Utenti</h2><p class="meta">Solo tu registri gli utenti, assegni i ruoli e regoli cosa può inserire ciascuno.</p>
+<details class="new card"><summary>＋ Registra un utente</summary><form data-form="user"><div class="g2"><div><label>Nome</label><input name="n" required maxlength="30"></div>
+<div><label>Ruolo</label><select name="r">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k==='alunno'?'selected':''}>${v}</option>`).join('')}</select></div>
+<div><label>Email</label><input name="e" type="email" required></div><div><label>Password iniziale (min. 8)</label><input name="p" type="text" required minlength="8"></div></div>
+<p class="meta">Dati conservati: solo nome, email e ruolo. L'utente cambierà la password al primo accesso.</p>
+<p><button class="pri" type="submit">Registra utente</button></p></form></details>
+${S.users.map(u=>{const pm=S.perms[u.id]||{},me=u.id===S.me.id;return `<div class="card"><div class="row"><div><b>${esc(u.name)}</b><div class="meta">${esc(u.email)}</div></div>
+<select data-role="${u.id}" class="sp" style="width:auto" aria-label="Ruolo di ${esc(u.name)}" ${me?'disabled':''}>
+${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select>
+${me?'':`<button class="sm" data-act="setpw" data-id="${u.id}">Reimposta password</button>${delBtn('deluser',u.id,'Rimuovi')}`}</div>
+<details data-u="${u.id}"><summary>Autorizzazioni di inserimento</summary>${u.role==='admin'?'<p class="meta">L\'amministratore ha tutte le autorizzazioni.</p>':
+Object.entries(PL).map(([k,v])=>`<div class="perm"><input type="checkbox" id="p-${u.id}-${k}" data-perm="${u.id}|${k}" ${pm[k]?'checked':''}><label for="p-${u.id}-${k}">${v}</label></div>`).join('')}
+<p class="meta">Regolano cosa può inserire, non cosa può vedere. Segnalare è sempre consentito.</p></details></div>`}).join('')}`},
+
+orario(){
+const t=S.tt,cls=S.settings.timetable_class;
+const head=`<div class="row" style="margin-bottom:1rem"><h2 style="margin:0">Orario ${esc(cls)}</h2><span class="sp row"><button class="sm" data-act="ttnav" data-id="-1" aria-label="Settimana precedente">‹</button><button class="sm" data-act="ttnav" data-id="0">Oggi</button><button class="sm" data-act="ttnav" data-id="1" aria-label="Settimana successiva">›</button></span></div>`;
+if(!t)return head+(S.ttErr?`<div class="empty">Non riesco a leggere l'orario da WebUntis.<br><span class="meta">${esc(S.ttErr)}</span></div>`:'<div class="empty">Caricamento dell\'orario…</div>');
+const ws=new Date(t.weekStart+'T12:00:00'),days=[];
+for(let i=0;i<6;i++){const d=new Date(ws);d.setDate(ws.getDate()+i);const iso=isoL(d);days.push({i,iso,d,list:t.periods.filter(p=>p.date===iso).sort((a,b)=>a.start.localeCompare(b.start))})}
+const D=days.slice(0,days[5].list.length?6:5),todayIso=isoL(new Date());
+const slots=[...new Set(t.periods.map(p=>p.start+'-'+p.end))].sort();
+if(S.ttDay===null){const k=D.findIndex(x=>x.iso===todayIso);S.ttDay=k>=0?k:0}
+const cell=p=>`<div class="ls ${p.state}"><b>${esc(p.subject||'—')}</b><span class="meta">${esc([p.room,p.teacher].filter(Boolean).join(' · '))}</span>${p.state==='cancel'?'<span class="tag">Annullata</span>':p.state==='subst'?'<span class="tag">Supplenza</span>':''}</div>`;
+const grid=`<div class="ttg"><table><thead><tr><th></th>${D.map(x=>`<th class="${x.iso===todayIso?'today':''}">${DAYS[x.i]} ${x.d.getDate()}</th>`).join('')}</tr></thead><tbody>${slots.map(s=>{const[a,b]=s.split('-');return `<tr><th>${a}<br><span class="meta">${b}</span></th>${D.map(x=>`<td class="${x.iso===todayIso?'today':''}">${x.list.filter(p=>p.start===a&&p.end===b).map(cell).join('')}</td>`).join('')}</tr>`}).join('')}</tbody></table></div>`;
+const day=D[Math.min(S.ttDay,D.length-1)];
+const list=`<div class="ttd"><div class="chips">${D.map((x,k)=>`<button data-act="ttday" data-id="${k}" class="${k===S.ttDay?'on':''}">${DAYS[x.i]} ${x.d.getDate()}</button>`).join('')}</div>${day.list.map(p=>`<div class="card lesson"><div class="meta">${p.start}–${p.end}</div>${cell(p)}</div>`).join('')||'<div class="empty">Nessuna lezione in questo giorno.</div>'}</div>`;
+return head+(t.periods.length?grid+list:'<div class="empty">Nessuna lezione trovata per questa settimana.</div>')+`<p class="meta">Fonte: WebUntis · aggiornato alle ${hm(t.fetchedAt)}</p>`},
+classe(){
+const us=Object.values(S.dir).sort((a,b)=>a.name.localeCompare(b.name,'it'));
+return `<h2>Classe</h2><p class="meta">I profili di tutti i membri registrati.</p>`+us.map(u=>{const me=u.id===S.me.id;
+return `<article class="card"><div class="row"><span class="av">${init(u.name)}</span><div><h3>${esc(u.name)}${me?' (tu)':''}</h3><span class="tag">${ROLES[u.role]}</span></div>${me?'<button class="sm sp" data-go="impostazioni">Modifica profilo</button>':''}</div>
+<p>${u.bio?esc(u.bio):'<span class="meta">Nessuna descrizione.</span>'}</p>
+<div class="stats"><span>Messaggi inviati: <b>${u.messages_sent||0}</b></span><span>Appunti caricati: <b>${u.notes_sent||0}</b></span><span>Messaggi eliminati: <b>${u.msgs_removed||0}</b></span><span>Appunti eliminati: <b>${u.notes_removed||0}</b></span></div>${conduct(u)}</article>`}).join('')},
+
+impostazioni(){
+const u=S.dir[S.me.id]||S.me,th=document.documentElement.dataset.theme;
+return `<h2>Impostazioni</h2>
+<section class="card"><h3>Aspetto</h3><p class="meta">Scegli lo schermo bianco o nero.</p>
+<div class="seg"><button class="${th!=='dark'?'on':''}" data-act="theme" data-id="light">Bianco</button><button class="${th==='dark'?'on':''}" data-act="theme" data-id="dark">Nero</button></div></section>
+${isA()?`<section class="card"><h3>Orario scolastico</h3><p class="meta">Classe da leggere su WebUntis, come compare nell'elenco (per esempio 3Z).</p>
+<form class="row" data-form="ttclass"><input name="c" required maxlength="20" value="${esc(S.settings.timetable_class)}" style="flex:1" aria-label="Classe"><button class="pri" type="submit">Salva</button></form></section>`:''}
+${isA()?`<section class="card"><h3>Materie della classe</h3><p class="meta">Compaiono negli appunti e nelle interrogazioni.</p>
+${SUBJ.map(s=>`<div class="item"><span>${esc(s)}</span><span class="sp row"><button class="sm" data-act="subjren" data-id="${esc(s)}">Rinomina</button><button class="sm del" data-act="subjdel" data-id="${esc(s)}">Rimuovi</button></span></div>`).join('')||'<p class="meta">Nessuna materia: aggiungine una.</p>'}
+<form class="row" data-form="subj" style="margin-top:.8rem"><input name="n" required maxlength="30" placeholder="Nuova materia" style="flex:1" aria-label="Nuova materia"><button class="pri" type="submit">Aggiungi</button></form></section>`:''}
+<section class="card"><h3>Il tuo account</h3>
+<div class="row" style="margin-top:.6rem"><span class="av">${init(S.me.name)}</span><div><b>${esc(S.me.name)}</b><div class="meta">${esc(S.me.email)} · ${ROLES[S.me.role]}</div></div></div>
+<form data-form="bio"><label for="bio">Descrizione del profilo</label><textarea id="bio" name="b" maxlength="200" placeholder="Scrivi qualcosa su di te (max 200 caratteri)">${esc(u.bio||'')}</textarea>
+<p><button class="pri" type="submit">Salva descrizione</button></p></form>
+<h3 style="margin-top:1rem">La tua condotta</h3>${conduct(u)}
+<p class="meta">La barra scende ogni volta che amministratore, moderatori o rappresentanti eliminano un tuo messaggio o appunto. Parte da 25 e a 25 contenuti eliminati è vuota.</p></section>
+${pwForm()}
+<p class="meta">ClassHub conserva solo nome, email, ruolo e la descrizione che scrivi tu.</p>`}
+};
+
+const ACT={
+async ttnav(i){S.ttOff=i==='0'?0:S.ttOff+Number(i);S.tt=null;S.ttErr='';S.ttDay=null;render();await LOAD.tt()},
+ttday(i){S.ttDay=+i},
+async subjdel(i){if(!confirm('Rimuovere la materia «'+i+'»? Gli appunti già caricati restano.'))return;await q(sb.from('subjects').delete().eq('name',i));await LOAD.subjects()},
+async subjren(i){const n=prompt('Nuovo nome per «'+i+'»:',i);if(!n||!n.trim()||n.trim()===i)return;await q(sb.rpc('rename_subject',{p_old:i,p_new:n.trim()}));await Promise.all([LOAD.subjects(),LOAD.notes(),LOAD.sess()])},
+async clearlog(){if(!confirm('Eliminare tutta la cronologia precedente? L\'operazione non si può annullare.'))return;await q(sb.rpc('clear_audit_log'));await LOAD.log()},
+theme(i){try{localStorage.setItem('ch-theme',i)}catch(e){}document.documentElement.dataset.theme=i},
+async logout(){await sb.auth.signOut();sb.removeAllChannels();S.me=null;S.err=''},
+async read(i){await q(sb.from('post_reads').insert({post_id:+i}));await LOAD.posts()},
+async delpost(i){await q(sb.from('posts').delete().eq('id',i));await LOAD.posts()},
+async delmsg(i){await q(sb.from('messages').delete().eq('id',i));await LOAD.msgs()},
+async delnote(i){const n=S.notes.find(x=>x.id==i);await q(sb.from('notes').delete().eq('id',i));if(n)await sb.storage.from('notes').remove([n.file_path]);await LOAD.notes()},
+async deltodo(i){await q(sb.from('todos').delete().eq('id',i));await LOAD.todos()},
+async report(i,b){S.rep={k:b.dataset.type,id:+i}},
+async repclose(){S.rep=null},
+async repign(i,b){await q(sb.from('reports').delete().eq('kind',b.dataset.type).eq('item_id',i));await LOAD.reports()},
+async repdel(i,b){const k=b.dataset.type,it=S.rItems[k+i];await q(sb.from(TBL[k]).delete().eq('id',i));
+if(k==='note'&&it)await sb.storage.from('notes').remove([it.file_path]);
+await Promise.all([LOAD.reports(),LOAD.msgs(),LOAD.notes(),LOAD.todos()])},
+async book(i){try{await q(sb.rpc('book_slot',{p_session:+i}))}finally{await LOAD.sess()}},
+async unbook(i){await q(sb.rpc('unbook_slot',{p_session:+i}));await LOAD.sess()},
+async draw(i){await q(sb.rpc('draw_order',{p_session:+i}));await LOAD.sess()},
+async mode(i){const s=S.sess.find(x=>x.id==i);await q(sb.rpc('set_session_mode',{p_session:+i,p_mode:s.mode==='book'?'random':'book'}));await LOAD.sess()},
+async delsess(i){await q(sb.from('exam_sessions').delete().eq('id',i));await LOAD.sess()},
+async swapreq(i,b){try{await q(sb.rpc('request_swap',{p_session:+i,p_to:b.dataset.who}))}finally{await LOAD.sess()}},
+async swapok(i){try{await q(sb.rpc('accept_swap',{p_request:+i}))}finally{await LOAD.sess()}},
+async swapno(i){await q(sb.from('swap_requests').delete().eq('id',i));await LOAD.sess()},
+async like(i){const has=S.likes.some(x=>x.note_id==i&&x.user_id===S.me.id);
+await q(has?sb.from('note_likes').delete().eq('note_id',i).eq('user_id',S.me.id):sb.from('note_likes').insert({note_id:+i}));await LOAD.notes()},
+async tick(i){const has=S.done.some(x=>x.todo_id==i&&x.user_id===S.me.id);
+await q(has?sb.from('todo_done').delete().eq('todo_id',i).eq('user_id',S.me.id):sb.from('todo_done').insert({todo_id:+i}));await LOAD.todos()},
+async openfile(i){const n=S.notes.find(x=>x.id==i),w=window.open('','_blank');
+const{data,error}=await sb.storage.from('notes').createSignedUrl(n.file_path,120);
+if(error){if(w)w.close();throw error}if(w)w.location=data.signedUrl;else location.href=data.signedUrl},
+async deluser(i){const u=S.users.find(x=>x.id===i);if(!confirm('Rimuovere '+u.name+'? Verranno eliminati anche i suoi contenuti.'))return;
+await fn({action:'delete',userId:i});await Promise.all([LOAD.users(),LOAD.dir()])},
+async setpw(i){const u=S.users.find(x=>x.id===i),p=prompt('Nuova password temporanea per '+u.name+' (min. 8 caratteri):');if(!p)return;
+if(p.length<8)return alert('La password deve avere almeno 8 caratteri.');
+await fn({action:'setpw',userId:i,password:p});alert('Password reimpostata. Dovrà cambiarla al prossimo accesso.')}
+};
+const FORMS={
+async ttclass(f){await q(sb.from('settings').upsert({key:'timetable_class',value:f.c.value.trim()}));await LOAD.settings();S.tt=null;S.ttErr='';S.ttDay=null;alert('Classe aggiornata.');LOAD.tt().then(()=>{if(S.me&&['orario','oggi'].includes(S.view))render()})},
+async subj(f){await q(sb.from('subjects').insert({name:f.n.value.trim()}));await LOAD.subjects()},
+async bio(f){await q(sb.rpc('set_bio',{p_bio:f.b.value.trim()}));await LOAD.dir();alert('Descrizione salvata.')},
+async post(f){await q(sb.from('posts').insert({title:f.t.value,body:f.b.value,category:f.cat.value,pinned:f.pin.value==='1'}));await LOAD.posts()},
+async msg(f){await q(sb.from('messages').insert({body:f.t.value}));await LOAD.msgs()},
+async sess(f){await q(sb.from('exam_sessions').insert({subject:f.sub.value,session_date:f.date.value,mode:f.mode.value,seats:+f.n.value}));await LOAD.sess()},
+async note(f){const fl=f.f.files[0];
+if(!fl||!TYPES.includes(fl.type)){alert('Formato non consentito. Usa PDF, PNG, JPG o WebP.');return false}
+if(fl.size>MAXMB*1048576){alert('Il file supera il limite di '+MAXMB+' MB.');return false}
+const path=S.me.id+'/'+Date.now()+'-'+safe(fl.name);
+await q(sb.storage.from('notes').upload(path,fl,{contentType:fl.type}));
+try{await q(sb.from('notes').insert({title:f.t.value,subject:f.sub.value,file_path:path,file_name:fl.name}))}
+catch(e){await sb.storage.from('notes').remove([path]);throw e}
+await LOAD.notes()},
+async todo(f){await q(sb.from('todos').insert({title:f.t.value,due:f.due.value,is_public:f.pub.value==='1'}));await LOAD.todos()},
+async report(f){const{error}=await sb.from('reports').insert({kind:S.rep.k,item_id:S.rep.id,reason:f.why.value,note:f.note.value.trim()||null});
+S.rep=null;if(error&&error.code!=='23505')throw error;
+alert(error?'Hai già segnalato questo contenuto.':'Segnalazione inviata a amministratore, rappresentanti e moderatori.')},
+async pw(f){if(f.nw.value.length<8){alert('La nuova password deve avere almeno 8 caratteri.');return false}
+if(f.nw.value===f.cur.value){alert('La nuova password deve essere diversa da quella attuale.');return false}
+if(f.nw.value!==f.rp.value){alert('Le due password non coincidono.');return false}
+const r1=await sb.auth.signInWithPassword({email:S.me.email,password:f.cur.value});
+if(r1.error){alert('La password attuale non è corretta.');return false}
+const r2=await sb.auth.updateUser({password:f.nw.value});
+if(r2.error){alert(r2.error.message);return false}
+await q(sb.rpc('password_changed'));S.me.must_change_password=false;await loadAll();alert('Password aggiornata.')},
+async user(f){await fn({action:'create',name:f.n.value.trim(),email:f.e.value.trim(),password:f.p.value,role:f.r.value});await Promise.all([LOAD.users(),LOAD.dir(),LOAD.log()])}
+};
+document.addEventListener('click',async e=>{
+const b=e.target.closest('[data-go],[data-act],[data-cat],[data-sub]');if(!b||b.type==='checkbox')return;
+if(b.dataset.go){S.view=b.dataset.go;render();await refreshView();render();return}
+if(b.dataset.cat){S.cat=b.dataset.cat;render();return}
+if(b.dataset.sub){S.sub=b.dataset.sub;render();return}
+if(S.busy)return;S.busy=true;
+try{await ACT[b.dataset.act](b.dataset.id,b)}catch(x){alert(errMsg(x))}
+S.busy=false;render()});
+document.addEventListener('change',async e=>{const t=e.target;
+try{
+if(t.dataset.act==='tick'){await ACT.tick(t.dataset.id);render()}
+if(t.dataset.role){await q(sb.from('profiles').update({role:t.value}).eq('id',t.dataset.role));await Promise.all([LOAD.users(),LOAD.dir(),LOAD.log()]);render()}
+if(t.dataset.perm){const[id,k]=t.dataset.perm.split('|');await q(sb.from('permissions').update({[k]:t.checked}).eq('user_id',id));await Promise.all([LOAD.users(),LOAD.log()]);render();const d=document.querySelector(`details[data-u="${id}"]`);if(d)d.open=true}
+}catch(x){alert(errMsg(x));render()}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;$('#nl').innerHTML=noteList()}});
+document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset.form)return;e.preventDefault();if(S.busy)return;S.busy=true;let r;
+try{r=await FORMS[f.dataset.form](f)}catch(x){alert(errMsg(x));r=false}
+S.busy=false;if(r!==false)render()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.rep){S.rep=null;render()}});
+boot();
+</script>
+</body>
+</html>
