@@ -181,6 +181,33 @@ nav{background:var(--glass);border-top:1px solid var(--gline);-webkit-backdrop-f
 .ttd{display:none}
 .lesson{display:flex;gap:1rem;align-items:flex-start}
 @media (max-width:760px){.ttg{display:none}.ttd{display:block}}
+.log{display:grid;grid-template-columns:8rem 1fr;gap:.8rem;align-items:start}
+.log .meta{white-space:nowrap}
+.tk{border-left:5px solid var(--gline)}
+.tk.v{border-left-color:#e0505d}.tk.i{border-left-color:#3b8cf0}
+.tag.tv{background:rgba(224,80,93,.16);color:#d1424f}
+.tag.ti{background:rgba(59,140,240,.16);color:#2f7be0}
+details.arch{margin:.4rem 0 1rem}
+details.arch>summary{font-weight:700;color:var(--mute);margin-bottom:.6rem}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:.3rem}
+.cal .wd{text-align:center;font-size:.75rem;color:var(--mute);font-weight:700}
+.cd{aspect-ratio:1;min-height:0;padding:.2rem;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.25rem;font-weight:600;background:var(--glass);border:1px solid var(--gline)}
+.cd.today{border-color:var(--ink)}
+.cd.sel{background:var(--hl);color:#16233f;border-color:var(--hl)}
+.cd.blank{visibility:hidden}
+.dots{display:flex;gap:3px;height:6px}
+.dt{width:6px;height:6px;border-radius:50%;display:inline-block;flex:none}
+.dt.v{background:#e0505d}.dt.i{background:#3b8cf0}.dt.p{background:#e0a800}
+.legend{display:flex;gap:1rem;flex-wrap:wrap;font-size:.82rem;color:var(--mute);margin:.8rem 0 0}
+.legend span{display:flex;gap:.35rem;align-items:center}
+.tk.m{border-left-color:#8b5cf6}
+.tag.tm{background:rgba(139,92,246,.16);color:#7c4ddb}
+.dt.m{background:#8b5cf6}
+img.av{object-fit:cover;padding:0}
+.av.xs{width:1.5rem;height:1.5rem;font-size:.72rem;display:inline-grid;vertical-align:middle}
+.chks{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.3rem .8rem;margin-top:.3rem}
+.chk{display:flex;gap:.5rem;align-items:center;font-weight:400;margin:0}
+.btnl{display:inline-flex;align-items:center;min-height:44px;padding:.55rem 1rem;border-radius:12px;font-weight:700;background:var(--hl);color:#16233f;cursor:pointer;margin:0}
 </style>
 </head>
 <body>
@@ -201,7 +228,7 @@ const PL={post:'Pubblicare avvisi in bacheca',msg:'Scrivere messaggi in chat',se
 const WHY=['Spam','Linguaggio offensivo','Contenuto inappropriato','Altro'];
 const MAXMB=5,TYPES=['application/pdf','image/png','image/jpeg','image/webp'];
 const TODAY=new Date().toISOString().slice(0,10);
-const S={me:null,perm:{},view:'oggi',cat:'Tutte',sub:'Tutte',q:'',rep:null,busy:false,err:'',ttOff:0,ttDay:null,tt:null,ttErr:'',settings:{timetable_class:'3Z'},
+const S={me:null,perm:{},view:'oggi',cat:'Tutte',sub:'Tutte',q:'',rep:null,busy:false,err:'',av:{},mcs:[],mcst:[],parts:[],tests:[],calOff:0,calDay:null,ttOff:0,ttDay:null,tt:null,ttErr:'',settings:{timetable_class:'3Z'},
 dir:{},posts:[],reads:[],msgs:[],sess:[],slots:[],swaps:[],notes:[],likes:[],todos:[],done:[],reports:[],rItems:{},log:[],users:[],perms:{}};
 const isoL=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
 const DAYS=['Lun','Mar','Mer','Gio','Ven','Sab'];
@@ -218,14 +245,18 @@ let m=error.message;try{const j=await error.context.json();m=j.error||j.message|
 const safe=n=>n.replace(/[^\w.\-]+/g,'_');
 
 const LOAD={
+tests:async()=>{try{S.tests=await q(sb.from('tests').select('*').order('test_date'))}catch(e){console.error(e);S.tests=[]}},
 settings:async()=>{try{(await q(sb.from('settings').select('*'))).forEach(r=>S.settings[r.key]=r.value)}catch(e){console.error(e)}},
 tt:async()=>{const d=new Date();d.setDate(d.getDate()+S.ttOff*7+(S.ttOff===0&&d.getDay()===0?1:0));
 try{S.tt=await fn({action:'timetable',className:S.settings.timetable_class,date:isoL(d)});S.ttErr=''}catch(e){S.tt=null;S.ttErr=e.message||String(e)}},
 subjects:async()=>{try{const r=await q(sb.from('subjects').select('name').order('id'));SUBJ.splice(0,SUBJ.length,...r.map(x=>x.name))}catch(e){console.error(e)}},
-dir:async()=>{S.dir={};(await q(sb.from('directory').select('*'))).forEach(u=>S.dir[u.id]=u)},
+dir:async()=>{S.dir={};(await q(sb.from('directory').select('*'))).forEach(u=>S.dir[u.id]=u);await LOAD.avatars()},
+avatars:async()=>{const ps=[...new Set(Object.values(S.dir).map(u=>u.avatar_path).filter(Boolean))].filter(p=>!S.av[p]);if(!ps.length)return;
+try{(await q(sb.storage.from('avatars').createSignedUrls(ps,3600))).forEach(x=>{if(x.signedUrl)S.av[x.path]=x.signedUrl})}catch(e){console.error(e)}},
+mc:async()=>{try{S.mcs=await q(sb.from('masterclasses').select('*').order('mc_date'));S.mcst=await q(sb.from('masterclass_students').select('*'))}catch(e){console.error(e);S.mcs=[];S.mcst=[]}},
 posts:async()=>{S.posts=await q(sb.from('posts').select('*').order('created_at',{ascending:false}));S.reads=await q(sb.from('post_reads').select('*'))},
 msgs:async()=>{S.msgs=(await q(sb.from('messages').select('*').order('created_at',{ascending:false}).limit(200))).reverse()},
-sess:async()=>{S.sess=await q(sb.from('exam_sessions').select('*').order('session_date'));S.slots=await q(sb.from('exam_slots').select('*').order('position'));S.swaps=await q(sb.from('swap_requests').select('*'))},
+sess:async()=>{S.sess=await q(sb.from('exam_sessions').select('*').order('session_date'));S.slots=await q(sb.from('exam_slots').select('*').order('position'));S.swaps=await q(sb.from('swap_requests').select('*'));try{S.parts=await q(sb.from('exam_participants').select('*'))}catch(e){S.parts=[]}},
 notes:async()=>{S.notes=await q(sb.from('notes').select('*').order('created_at',{ascending:false}));S.likes=await q(sb.from('note_likes').select('*'))},
 todos:async()=>{S.todos=await q(sb.from('todos').select('*').order('due'));S.done=await q(sb.from('todo_done').select('*'))},
 reports:async()=>{if(!staff())return;S.reports=await q(sb.from('reports').select('*').order('created_at'));S.rItems={};
@@ -234,8 +265,8 @@ if(ids.length)(await q(sb.from(t).select('*').in('id',ids))).forEach(x=>S.rItems
 log:async()=>{if(!seeLog())return;S.log=await q(sb.from('audit_log').select('*').order('created_at',{ascending:false}).limit(150))},
 users:async()=>{if(!isA())return;S.users=await q(sb.from('profiles').select('*').order('name'));S.perms={};(await q(sb.from('permissions').select('*'))).forEach(p=>S.perms[p.user_id]=p)}
 };
-const VLOAD={orario:['tt'],oggi:['posts','todos','sess','tt'],altro:['reports'],bacheca:['posts'],messaggi:['msgs'],interrogazioni:['sess'],appunti:['notes'],promemoria:['todos'],segnalazioni:['reports'],cronologia:['log'],utenti:['users'],classe:[],impostazioni:[]};
-const loadAll=async()=>{await Promise.all(['subjects','dir','posts','msgs','sess','notes','todos','reports','log','users'].map(k=>LOAD[k]()));LOAD.settings().then(()=>LOAD.tt()).then(()=>{if(S.me)render()})};
+const VLOAD={masterclass:['mc'],calendario:['tests','sess','todos','mc'],orario:['tt'],oggi:['posts','todos','sess','tests','tt'],altro:['reports'],bacheca:['posts'],messaggi:['msgs'],interrogazioni:['sess','tests'],appunti:['notes'],promemoria:['todos'],segnalazioni:['reports'],cronologia:['log'],utenti:['users'],classe:[],impostazioni:[]};
+const loadAll=async()=>{await Promise.all(['subjects','dir','posts','msgs','sess','tests','mc','notes','todos','reports','log','users'].map(k=>LOAD[k]()));LOAD.settings().then(()=>LOAD.tt()).then(()=>{if(S.me)render()})};
 async function refreshView(){try{if(S.view==='oggi'&&S.ttOff!==0){S.ttOff=0;S.tt=null}await Promise.all([LOAD.subjects(),LOAD.dir(),LOAD.reports(),...VLOAD[S.view].map(k=>LOAD[k]())])}catch(e){console.error(e)}}
 
 async function boot(){
@@ -269,10 +300,10 @@ const pwForm=()=>`<form class="card" data-form="pw"><b>Cambia password</b>
 <label>Ripeti la nuova password</label><input name="rp" type="password" required minlength="8" autocomplete="new-password">
 <p><button class="pri" type="submit">Salva password</button></p></form>`;
 
-const IC={oggi:'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',bacheca:'M9 4h6v3H9z M7 5H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2 M8 12h8 M8 16h5',messaggi:'M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z',interrogazioni:'M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4',appunti:'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11',promemoria:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M8 12l3 3 5-6',segnalazioni:'M5 21V4 M5 4h12l-2 4 2 4H5',cronologia:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2',utenti:'M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1 M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M21 20v-1a4 4 0 0 0-3-3.9 M16 4.1a3.5 3.5 0 0 1 0 6.8',impostazioni:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',classe:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.9 M16 3.1a4 4 0 0 1 0 7.8',orario:'M4 4h16v16H4z M4 9h16 M9 9v11 M15 9v11',account:'M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',altro:'M5 12h.01 M12 12h.01 M19 12h.01'};
+const IC={oggi:'M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',bacheca:'M9 4h6v3H9z M7 5H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-2 M8 12h8 M8 16h5',messaggi:'M21 12a8 8 0 0 1-11.6 7.1L4 20l1.1-4.6A8 8 0 1 1 21 12z',interrogazioni:'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z M13.5 6.5l4 4',masterclass:'M2 9l10-5 10 5-10 5z M6 11v5c0 1.5 3 3 6 3s6-1.5 6-3v-5',calendario:'M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z M4 10h16 M8 3v4 M16 3v4 M8 14h.01 M12 14h.01 M16 14h.01 M8 18h.01 M12 18h.01',appunti:'M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z M5 17a3 3 0 0 1 3-3h11',promemoria:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M8 12l3 3 5-6',segnalazioni:'M5 21V4 M5 4h12l-2 4 2 4H5',cronologia:'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18z M12 7v5l3 2',utenti:'M16 20v-1a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v1 M9.5 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z M21 20v-1a4 4 0 0 0-3-3.9 M16 4.1a3.5 3.5 0 0 1 0 6.8',impostazioni:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z',classe:'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z M23 21v-2a4 4 0 0 0-3-3.9 M16 3.1a4 4 0 0 1 0 7.8',orario:'M4 4h16v16H4z M4 9h16 M9 9v11 M15 9v11',account:'M20 21v-1a5 5 0 0 0-5-5H9a5 5 0 0 0-5 5v1 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z',altro:'M5 12h.01 M12 12h.01 M19 12h.01'};
 const ic=k=>`<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="${IC[k]}"${k==='altro'?' stroke-width="3.5"':''}/></svg>`;
-const PRIM=['oggi','bacheca','messaggi','interrogazioni','appunti'],SEC=['altro','orario','promemoria','segnalazioni','cronologia','utenti','classe','impostazioni'];
-function tabs(){const t=[['oggi','Oggi'],['bacheca','Bacheca'],['messaggi','Messaggi','Chat'],['interrogazioni','Interrogazioni','Interrog.'],['appunti','Appunti'],['orario','Orario'],['promemoria','Promemoria']];
+const PRIM=['oggi','bacheca','messaggi','interrogazioni','appunti'],SEC=['altro','orario','calendario','masterclass','promemoria','segnalazioni','cronologia','utenti','classe','impostazioni'];
+function tabs(){const t=[['oggi','Oggi'],['bacheca','Bacheca'],['messaggi','Messaggi','Chat'],['interrogazioni','Verifiche e interrogazioni','Verifiche'],['appunti','Appunti'],['orario','Orario'],['calendario','Calendario'],['masterclass','Masterclass'],['promemoria','Promemoria']];
 if(staff())t.push(['segnalazioni','Segnalazioni']);if(seeLog())t.push(['cronologia','Cronologia']);if(isA())t.push(['utenti','Utenti']);t.push(['classe','Classe'],['impostazioni','Impostazioni']);return t}
 const nRep=()=>new Set(S.reports.map(r=>r.kind+r.item_id)).size;
 function render(){
@@ -296,21 +327,42 @@ const delBtn=(a,i,l='Elimina')=>`<button class="sm del" data-act="${a}" data-id=
 const noPerm=t=>`<div class="empty" style="margin-bottom:1rem">L'amministratore ha disattivato per te l'autorizzazione a ${t}.</div>`;
 
 function chatHTML(){return S.msgs.map(m=>{const mine=m.author_id===S.me.id,rp=roleOf(m.author_id)==='rapp';
-return `<div class="msg ${mine?'mine':''} ${rp?'rapp':''}"><div class="meta">${esc(nm(m.author_id))}${rp?' · Rappresentante':''} · ${hm(m.created_at)}</div>${esc(m.body)}
+return `<div class="msg ${mine?'mine':''} ${rp?'rapp':''}"><div class="meta">${avt(m.author_id,'xs')} ${esc(nm(m.author_id))}${rp?' · Rappresentante':''}${m.staff_only?' · riservato ai rappresentanti':''} · ${hm(m.created_at)}</div>${esc(m.body)}
 <div class="acts">${mine||staff()?delBtn('delmsg',m.id):''}${mine?'':repBtn('message',m.id)}</div></div>`}).join('')||'<div class="empty">Nessun messaggio.</div>'}
 function noteList(){
 const t=S.q.trim().toLowerCase();
 const l=S.notes.filter(n=>(S.sub==='Tutte'||n.subject===S.sub)&&(!t||(n.title+' '+n.subject+' '+n.file_name+' '+nm(n.author_id)).toLowerCase().includes(t)));
-return l.map(n=>{const lk=S.likes.some(x=>x.note_id===n.id&&x.user_id===S.me.id),cnt=S.likes.filter(x=>x.note_id===n.id).length,own=n.author_id===S.me.id;
+return arch(l,n=>n.ref_date,n=>{const lk=S.likes.some(x=>x.note_id===n.id&&x.user_id===S.me.id),cnt=S.likes.filter(x=>x.note_id===n.id).length,own=n.author_id===S.me.id;
 return `<article class="card"><div class="row"><h3>${esc(n.title)}</h3><span class="tag sp">${esc(n.subject)}</span></div>
-<div class="row"><span class="meta">${esc(n.file_name)} · caricato da ${esc(nm(n.author_id))}</span><span class="sp row">
+<div class="row"><span class="meta">${esc(n.file_name)} · caricato da ${esc(nm(n.author_id))}${n.ref_date?' · '+fmt(n.ref_date):''}</span><span class="sp row">
 <button class="sm" data-act="openfile" data-id="${n.id}">Apri</button>
 <button class="sm ${lk?'pri':''}" data-act="like" data-id="${n.id}">Utile · ${cnt}</button>
-${own||staff()?delBtn('delnote',n.id,'Rimuovi'):''}${own?'':repBtn('note',n.id)}</span></div></article>`}).join('')||`<div class="empty">${t?'Nessun risultato per «'+esc(S.q)+'».':'Ancora nessun appunto per questa materia.'}</div>`}
+${own||staff()?delBtn('delnote',n.id,'Rimuovi'):''}${own?'':repBtn('note',n.id)}</span></div></article>`},`<div class="empty">${t?'Nessun risultato per «'+esc(S.q)+'».':'Ancora nessun appunto per questa materia.'}</div>`)}
 
-const conduct=u=>{const r=Math.min(25,(u.msgs_removed||0)+(u.notes_removed||0)),lv=25-r,tx=r===0?'Ottima':r<=5?'Buona':r<=12?'Da migliorare':r<=24?'Scarsa':'Minima';
+const MODE={book:'Prenotazione libera',random:'Sorteggio',all:'Tutta la classe',chosen:'Alunni scelti'};
+const arch=(list,df,cb,empty)=>{const t=isoL(new Date()),up=list.filter(x=>!df(x)||df(x)>=t),past=list.filter(x=>df(x)&&df(x)<t);
+return (up.map(cb).join('')||empty)+(past.length?`<details class="arch"><summary>Archivio / Passati (${past.length})</summary>${past.map(cb).join('')}</details>`:'')};
+const tot=u=>(u.msgs_removed||0)+(u.notes_removed||0)+(u.tests_removed||0)+(u.todos_removed||0)+(u.posts_removed||0)+(u.sessions_removed||0);
+const canRename=u=>(isA()||S.me.role==='rapp')&&!(S.me.role==='rapp'&&u.role==='admin');
+const agenda=()=>[...S.tests.map(t=>({k:'v',d:t.test_date,t})),...S.sess.map(s=>({k:'i',d:s.session_date,s}))].sort((a,b)=>a.d.localeCompare(b.d));
+const testCard=t=>`<article class="card tk v"><div class="row"><span class="tag tv">Verifica</span><h3>${esc(t.subject)}</h3><span class="meta">${fmt(t.test_date)}</span>${can('sess')||t.author_id===S.me.id?`<span class="sp">${delBtn('deltest',t.id)}</span>`:''}</div>${t.topic?`<p>${esc(t.topic)}</p>`:''}</article>`;
+const agendaHTML=cb=>{const t=isoL(new Date()),A=agenda(),up=A.filter(x=>x.d>=t),past=A.filter(x=>x.d<t).reverse();
+return (up.map(cb).join('')||'<div class="empty">Nessuna verifica o interrogazione in programma.</div>')+(past.length?`<details class="arch"><summary>Archivio / Passati (${past.length})</summary>${past.map(cb).join('')}</details>`:'')};
+const conduct=u=>{const r=Math.min(25,tot(u)),lv=25-r,tx=r===0?'Ottima':r<=5?'Buona':r<=12?'Da migliorare':r<=24?'Scarsa':'Minima';
 return `<div class="cond"><div class="row"><b>Condotta</b><span class="meta sp">${tx}</span></div><div class="bar" role="progressbar" aria-label="Livello di condotta" aria-valuemin="0" aria-valuemax="25" aria-valuenow="${lv}"><i style="width:${lv/25*100}%;background:hsl(${Math.round(125*lv/25)},65%,45%)"></i></div><div class="meta">Livello ${lv} su 25 · ${r} ${r===1?'contenuto eliminato':'contenuti eliminati'}</div></div>`};
 const init=n=>esc((n||'?').slice(0,1).toUpperCase());
+const avt=(id,c='')=>{const u=S.dir[id]||{},url=u.avatar_path&&S.av[u.avatar_path];return url?`<img class="av ${c}" src="${esc(url)}" alt="">`:`<span class="av ${c}">${init(u.name)}</span>`};
+async function uploadAvatar(file){try{
+if(!file.type.startsWith('image/'))return alert('Scegli un\'immagine.');
+const bmp=await createImageBitmap(file,{imageOrientation:'from-image'}).catch(()=>createImageBitmap(file));
+const s=Math.min(bmp.width,bmp.height),c=document.createElement('canvas');c.width=c.height=256;
+c.getContext('2d').drawImage(bmp,(bmp.width-s)/2,(bmp.height-s)/2,s,s,0,0,256,256);
+const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.82));
+const old=(S.dir[S.me.id]||{}).avatar_path,path=S.me.id+'/'+Date.now()+'.jpg';
+await q(sb.storage.from('avatars').upload(path,blob,{contentType:'image/jpeg'}));
+await q(sb.rpc('set_avatar',{p_path:path}));
+if(old)await sb.storage.from('avatars').remove([old]);
+await LOAD.dir();render()}catch(e){alert(errMsg(e))}}
 const VIEWS={
 oggi(){
 const hr=new Date().getHours(),g=hr<12?'Buongiorno':hr<18?'Ciao':'Buonasera';
@@ -321,6 +373,7 @@ const L=[],now=Date.now(),soon=new Date(now+3*864e5).toISOString().slice(0,10);
 S.posts.filter(p=>!S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id)).forEach(p=>L.push({ts:Date.parse(p.created_at),k:'bacheca',t:'Nuovo avviso: '+p.title}));
 S.swaps.filter(w=>w.to_user===S.me.id).forEach(w=>{const s=S.sess.find(x=>x.id===w.session_id);L.push({ts:Date.parse(w.created_at),k:'interrogazioni',t:nm(w.from_user)+' ti propone uno scambio di turno'+(s?' ('+s.subject+')':'')})});
 my.filter(o=>o.s.session_date<=soon).forEach(o=>L.push({ts:now,nt:1,k:'interrogazioni',t:'Interrogazione di '+o.s.subject+': '+fmt(o.s.session_date)}));
+S.tests.filter(t=>t.test_date>=TODAY&&t.test_date<=soon).forEach(t=>L.push({ts:now,nt:1,k:'interrogazioni',t:'Verifica di '+t.subject+': '+fmt(t.test_date)}));
 S.todos.filter(t=>t.due<TODAY&&!S.done.some(d=>d.todo_id===t.id&&d.user_id===S.me.id)).slice(0,2).forEach(t=>L.push({ts:now-1,nt:1,k:'promemoria',t:'Scaduto: '+t.title}));
 const lm=[...S.msgs].reverse().find(m=>m.author_id!==S.me.id);
 if(lm&&now-Date.parse(lm.created_at)<864e5)L.push({ts:Date.parse(lm.created_at),k:'messaggi',t:nm(lm.author_id)+': '+lm.body.slice(0,60)});
@@ -341,7 +394,7 @@ ${my.map(o=>`<div class="item"><b>${esc(o.s.subject)}</b><span class="meta sp">$
 ${td.map(t=>`<div class="item"><input type="checkbox" data-act="tick" data-id="${t.id}" aria-label="Fatto"><span>${esc(t.title)}</span><span class="meta sp ${t.due<TODAY?'late':''}">${t.due<TODAY?'Scaduto · ':''}${fmt(t.due)}</span></div>`).join('')||'<p class="meta">Niente da fare: sei in pari.</p>'}</section>
 <h3 class="sec-t">Tutte le sezioni</h3><div class="tiles">${tiles}</div>`},
 altro(){
-const it=[['orario','Orario'],['promemoria','Promemoria']];if(staff())it.push(['segnalazioni','Segnalazioni']);if(seeLog())it.push(['cronologia','Cronologia']);if(isA())it.push(['utenti','Utenti']);it.push(['classe','Classe'],['impostazioni','Impostazioni']);
+const it=[['orario','Orario'],['calendario','Calendario'],['masterclass','Masterclass'],['promemoria','Promemoria']];if(staff())it.push(['segnalazioni','Segnalazioni']);if(seeLog())it.push(['cronologia','Cronologia']);if(isA())it.push(['utenti','Utenti']);it.push(['classe','Classe'],['impostazioni','Impostazioni']);
 return `<h2>Altro</h2><div class="menu">${it.map(([k,l])=>`<button data-go="${k}">${ic(k)}<span>${l}</span>${k==='segnalazioni'&&nRep()?`<span class="badge">${nRep()}</span>`:''}</button>`).join('')}<button class="del" data-act="logout">${ic('account')}<span>Esci</span></button></div>`},
 bacheca(){
 const cats=['Tutte','Verifiche','Comunicazioni','Gite','Varie'];
@@ -350,49 +403,55 @@ return `<h2>Bacheca</h2>
 ${can('post')?`<details class="new card"><summary>＋ Nuovo avviso</summary><form data-form="post"><label>Titolo</label><input name="t" required maxlength="80">
 <label>Testo</label><textarea name="b" required></textarea><div class="g2"><div><label>Categoria</label><select name="cat">${cats.slice(1).map(c=>`<option>${c}</option>`).join('')}</select></div>
 <div><label>In evidenza</label><select name="pin"><option value="0">No</option><option value="1">Sì, fissa in alto</option></select></div></div>
-<p><button class="pri" type="submit">Pubblica avviso</button></p></form></details>`:''}
+<label>Data (facoltativa): passata la data l'avviso va nell'archivio</label><input type="date" name="rd">
+<p class="row"><button class="pri" type="submit">Pubblica avviso</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>`:''}
 <div class="chips">${cats.map(c=>`<button data-cat="${c}" class="${S.cat===c?'on':''}">${c}</button>`).join('')}</div>
-${list.map(p=>{const rd=S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id),n=S.reads.filter(r=>r.post_id===p.id).length;
+${arch(list,p=>p.ref_date,p=>{const rd=S.reads.some(r=>r.post_id===p.id&&r.user_id===S.me.id),n=S.reads.filter(r=>r.post_id===p.id).length;
 return `<article class="card ${p.pinned?'pin':''}"><div class="row"><h3>${esc(p.title)}</h3><span class="tag sp">${esc(p.category)}</span></div>
-<p style="white-space:pre-wrap">${esc(p.body)}</p><div class="row"><span class="meta">${esc(nm(p.author_id))} · ${dm(p.created_at)}${staff()?` · letto da ${n} su ${Object.keys(S.dir).length}`:''}</span>
+<p style="white-space:pre-wrap">${esc(p.body)}</p><div class="row"><span class="meta">${esc(nm(p.author_id))} · ${dm(p.created_at)}${p.ref_date?' · per il '+fmt(p.ref_date):''}${staff()?` · letto da ${n} su ${Object.keys(S.dir).length}`:''}</span>
 <span class="sp row">${rd?'<span class="meta">Letto</span>':`<button class="sm" data-act="read" data-id="${p.id}">Segna come letto</button>`}
-${staff()||p.author_id===S.me.id?delBtn('delpost',p.id):''}</span></div></article>`}).join('')||'<div class="empty">Nessun avviso in questa categoria.</div>'}`},
+${staff()||p.author_id===S.me.id?delBtn('delpost',p.id):''}</span></div></article>`},'<div class="empty">Nessun avviso in questa categoria.</div>')}`},
 
 messaggi(){
 return `<h2>Messaggi</h2><p class="meta">Solo chat di classe: non esistono messaggi privati. I messaggi del rappresentante sono in giallo.</p>
 <div class="chat" id="chat">${chatHTML()}</div>
-${can('msg')?`<form class="row" data-form="msg"><input name="t" required maxlength="300" placeholder="Scrivi un messaggio alla classe" style="flex:1" aria-label="Messaggio" autocomplete="off"><button class="pri" type="submit">Invia</button></form>`:noPerm('scrivere messaggi')}`},
+${can('msg')?`<form class="row" data-form="msg"><input name="t" required maxlength="300" placeholder="Scrivi un messaggio alla classe" style="flex:1" aria-label="Messaggio" autocomplete="off"><select name="to" aria-label="Destinatari" style="width:auto"><option value="all">A: tutti</option><option value="staff">A: solo rappresentanti</option></select><button class="pri" type="submit">Invia</button></form>`:noPerm('scrivere messaggi')}`},
 
 interrogazioni(){
 const m=can('sess'),bk0=can('book');
-return `<h2>Interrogazioni</h2>
-${m?`<details class="new card"><summary>＋ Nuova sessione</summary><form data-form="sess"><div class="g2"><div><label>Materia</label><select name="sub">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></div>
+return `<h2>Verifiche e interrogazioni</h2>
+${m?`<details class="new card"><summary>＋ Nuova verifica</summary><form data-form="test"><div class="g2"><div><label>Materia</label><select name="sub">${SUBJ.map(s=>`<option>${esc(s)}</option>`).join('')}</select></div>
+<div><label>Data</label><input type="date" name="date" required min="${TODAY}"></div></div><label>Argomento (facoltativo)</label><input name="t" maxlength="80">
+<p class="row"><button class="pri" type="submit">Aggiungi verifica</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>`:''}
+${m?`<details class="new card"><summary>＋ Nuova interrogazione</summary><form data-form="sess"><div class="g2"><div><label>Materia</label><select name="sub">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></div>
 <div><label>Data</label><input type="date" name="date" required min="${TODAY}"></div></div>
-<div class="g2"><div><label>Modalità</label><select name="mode"><option value="book">Prenotazione libera</option><option value="random">Ordine casuale</option></select></div>
-<div><label>Numero di interrogati</label><input type="number" name="n" min="1" max="12" value="4" required></div></div>
-<p><button class="pri" type="submit">Crea sessione</button></p></form></details>`:''}
-${S.sess.map(s=>{
+<div class="g2"><div><label>Modalità</label><select name="mode"><option value="book">Prenotazione libera</option><option value="random">Sorteggio</option><option value="all">Tutta la classe</option><option value="chosen">Alunni scelti</option></select></div>
+<div class="seatsf"><label>Numero di interrogati</label><input type="number" name="n" min="1" max="12" value="4"></div></div>
+<div class="chooser" hidden><label>Alunni da interrogare</label><div class="chks">${Object.values(S.dir).filter(u=>u.role!=='admin').sort((a,b)=>a.name.localeCompare(b.name,'it')).map(u=>`<label class="chk"><input type="checkbox" name="u" value="${u.id}">${esc(u.name)}</label>`).join('')}</div></div>
+<p class="row"><button class="pri" type="submit">Crea sessione</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>`:''}
+${agendaHTML(it=>{if(it.k==='v')return testCard(it.t);const s=it.s;
 const bk=s.mode==='book',sl=S.slots.filter(x=>x.session_id===s.id).sort((a,b)=>a.position-b.position),taken=sl.filter(x=>x.user_id);
 const mine=taken.some(x=>x.user_id===S.me.id),free=sl.length-taken.length;
 const sw=u=>mine&&u&&u!==S.me.id&&bk0?` <button class="sm" data-act="swapreq" data-id="${s.id}" data-who="${esc(u)}">Scambia</button>`:'';
 const pend=S.swaps.filter(w=>w.session_id===s.id);
-return `<article class="card"><div class="row"><h3>${esc(s.subject)}</h3><span class="meta">${fmt(s.session_date)}</span>
-<span class="tag sp">${bk?'Prenotazione libera':'Ordine casuale'}</span></div>
+return `<article class="card tk i"><div class="row"><span class="tag ti">Interrogazione</span><h3>${esc(s.subject)}</h3><span class="meta">${fmt(s.session_date)}</span>
+<span class="tag sp">${MODE[s.mode]||s.mode}</span></div>
 ${bk?`<div class="seats">${sl.map((x,i)=>`<div class="seat ${x.user_id?'taken':''} ${x.user_id===S.me.id?'you':''}"><span>${i+1}. ${x.user_id?esc(nm(x.user_id))+(x.user_id===S.me.id?' (tu)':''):'libero'}</span>${sw(x.user_id)}</div>`).join('')}</div>`
 :taken.length?`<ol class="ord">${taken.map(x=>`<li class="${x.user_id===S.me.id?'you':''}">${esc(nm(x.user_id))}${x.user_id===S.me.id?' (tu)':''}${sw(x.user_id)}</li>`).join('')}</ol>`:'<p class="meta">L\'ordine non è ancora stato estratto.</p>'}
 ${pend.map(w=>w.to_user===S.me.id?`<div class="swap">${esc(nm(w.from_user))} propone di scambiare il turno con te. <button class="sm pri" data-act="swapok" data-id="${w.id}">Accetta</button> <button class="sm" data-act="swapno" data-id="${w.id}">Rifiuta</button></div>`
 :`<div class="swap">Hai proposto uno scambio a ${esc(nm(w.to_user))}. <button class="sm" data-act="swapno" data-id="${w.id}">Annulla</button></div>`).join('')}
 <p class="row">${bk?(mine?`<button class="del" data-act="unbook" data-id="${s.id}">Annulla la mia prenotazione</button>`:`<button class="pri" data-act="book" data-id="${s.id}" ${free&&bk0?'':'disabled'}>${!bk0?'Prenotazione non consentita':free?'Prenota un posto':'Completa'}</button>`):''}
-${m?`<span class="sp row">${bk?'':`<button class="sm" data-act="draw" data-id="${s.id}">${taken.length?'Estrai di nuovo':'Estrai ordine'}</button>`}
-<button class="sm" data-act="mode" data-id="${s.id}">Passa a ${bk?'ordine casuale':'prenotazione libera'}</button>${delBtn('delsess',s.id,'Elimina sessione')}</span>`:''}</p></article>`}).join('')||'<div class="empty">Nessuna sessione aperta.</div>'}`},
+${m?`<span class="sp row">${s.mode==='random'?`<button class="sm" data-act="draw" data-id="${s.id}">${taken.length?'Estrai di nuovo':'Estrai ordine'}</button>`:bk?'':`<button class="sm" data-act="reassign" data-id="${s.id}">Riassegna turni</button>`}
+${bk||s.mode==='random'?`<button class="sm" data-act="mode" data-id="${s.id}">Passa a ${bk?'sorteggio':'prenotazione libera'}</button>`:''}${delBtn('delsess',s.id,'Elimina sessione')}</span>`:''}</p></article>`})}`},
 
 appunti(){
 return `<h2>Appunti</h2>
 ${can('note')?`<details class="new card"><summary>＋ Condividi un appunto</summary><form data-form="note"><label>Titolo</label><input name="t" required maxlength="80">
 <div class="g2"><div><label>Materia</label><select name="sub">${SUBJ.map(s=>`<option>${s}</option>`).join('')}</select></div>
 <div><label>File</label><input type="file" name="f" accept=".pdf,.png,.jpg,.jpeg,.webp" required></div></div>
+<label>Data (facoltativa): passata la data l'appunto va nell'archivio</label><input type="date" name="rd">
 <p class="meta">Formati: PDF, PNG, JPG o WebP. Massimo ${MAXMB} MB.</p>
-<p><button class="pri" type="submit">Carica appunto</button></p></form></details>`:noPerm('caricare appunti')}
+<p class="row"><button class="pri" type="submit">Carica appunto</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>`:noPerm('caricare appunti')}
 <label for="q">Cerca negli appunti</label><input id="q" type="search" placeholder="Titolo, materia, nome file o autore" value="${esc(S.q)}">
 <div class="chips" style="margin-top:.7rem">${['Tutte',...new Set([...SUBJ,...S.notes.map(n=>n.subject)])].map(s=>`<button data-sub="${s}" class="${S.sub===s?'on':''}">${s}</button>`).join('')}</div>
 <div id="nl">${noteList()}</div>`},
@@ -403,7 +462,7 @@ return `<h2>Promemoria</h2>
 ${can('todo')?`<details class="new card"><summary>＋ Nuovo promemoria</summary><form data-form="todo"><div class="g2"><div><label>Cosa devi fare</label><input name="t" required maxlength="80"></div>
 <div><label>Scadenza</label><input type="date" name="due" required></div></div>
 <label>Visibilità</label><select name="pub"><option value="0">Personale (solo io)</option><option value="1">Pubblico (tutta la classe)</option></select>
-<p><button class="pri" type="submit">Aggiungi</button></p></form></details>`:noPerm('creare promemoria')}
+<p class="row"><button class="pri" type="submit">Aggiungi</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>`:noPerm('creare promemoria')}
 ${list.map(t=>{const dn=S.done.some(d=>d.todo_id===t.id&&d.user_id===S.me.id),late=!dn&&t.due<TODAY,own=t.author_id===S.me.id;
 return `<div class="card todo ${dn?'done':''}"><input type="checkbox" data-act="tick" data-id="${t.id}" ${dn?'checked':''} aria-label="Fatto">
 <div><span class="tt">${esc(t.title)}</span><div class="meta ${late?'late':''}">${late?'Scaduto · ':''}${fmt(t.due)} · ${t.is_public?'pubblico, di '+esc(nm(t.author_id)):own?'personale':'personale di '+esc(nm(t.author_id))}</div></div>
@@ -428,15 +487,44 @@ return `<h2>Utenti</h2><p class="meta">Solo tu registri gli utenti, assegni i ru
 <div><label>Ruolo</label><select name="r">${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${k==='alunno'?'selected':''}>${v}</option>`).join('')}</select></div>
 <div><label>Email</label><input name="e" type="email" required></div><div><label>Password iniziale (min. 8)</label><input name="p" type="text" required minlength="8"></div></div>
 <p class="meta">Dati conservati: solo nome, email e ruolo. L'utente cambierà la password al primo accesso.</p>
-<p><button class="pri" type="submit">Registra utente</button></p></form></details>
-${S.users.map(u=>{const pm=S.perms[u.id]||{},me=u.id===S.me.id;return `<div class="card"><div class="row"><div><b>${esc(u.name)}</b><div class="meta">${esc(u.email)}</div></div>
+<p class="row"><button class="pri" type="submit">Registra utente</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>
+${S.users.map(u=>{const pm=S.perms[u.id]||{},me=u.id===S.me.id,rem=Math.min(25,tot(S.dir[u.id]||{}));return `<div class="card"><div class="row">${avt(u.id)}<div><b>${esc(u.name)}</b><div class="meta">${esc(u.email)}</div></div>
 <select data-role="${u.id}" class="sp" style="width:auto" aria-label="Ruolo di ${esc(u.name)}" ${me?'disabled':''}>
 ${Object.entries(ROLES).map(([k,v])=>`<option value="${k}" ${u.role===k?'selected':''}>${v}</option>`).join('')}</select>
 ${me?'':`<button class="sm" data-act="setpw" data-id="${u.id}">Reimposta password</button>${delBtn('deluser',u.id,'Rimuovi')}`}</div>
+<div class="row meta" style="margin-top:.4rem">Condotta: livello ${25-rem} su 25 ${rem?`<button class="sm" data-act="resetcond" data-id="${u.id}">Azzera condotta</button>`:''}<button class="sm" data-act="renuser" data-id="${u.id}">Modifica nome</button>${(S.dir[u.id]||{}).avatar_path&&u.id!==S.me.id?`<button class="sm del" data-act="avdel" data-id="${u.id}">Rimuovi foto</button>`:''}</div>
 <details data-u="${u.id}"><summary>Autorizzazioni di inserimento</summary>${u.role==='admin'?'<p class="meta">L\'amministratore ha tutte le autorizzazioni.</p>':
 Object.entries(PL).map(([k,v])=>`<div class="perm"><input type="checkbox" id="p-${u.id}-${k}" data-perm="${u.id}|${k}" ${pm[k]?'checked':''}><label for="p-${u.id}-${k}">${v}</label></div>`).join('')}
 <p class="meta">Regolano cosa può inserire, non cosa può vedere. Segnalare è sempre consentito.</p></details></div>`}).join('')}`},
 
+calendario(){
+const nowd=new Date(),base=new Date(nowd.getFullYear(),nowd.getMonth()+S.calOff,1),y=base.getFullYear(),m=base.getMonth(),ym=y+'-'+String(m+1).padStart(2,'0');
+const sd=(base.getDay()+6)%7,dim=new Date(y,m+1,0).getDate(),today=isoL(nowd),ev={};
+const add=(iso,k,t)=>(ev[iso]=ev[iso]||[]).push({k,t});
+S.tests.forEach(t=>add(t.test_date,'v','Verifica di '+t.subject+(t.topic?': '+t.topic:'')));
+S.sess.forEach(s=>add(s.session_date,'i','Interrogazioni di '+s.subject));
+S.mcs.forEach(c=>add(c.mc_date,'m','Masterclass'+(c.title?': '+c.title:'')+' · '+c.professor));
+S.todos.filter(t=>!S.done.some(d=>d.todo_id===t.id&&d.user_id===S.me.id)).forEach(t=>add(t.due,'p',t.title+(t.is_public?'':' (personale)')));
+let sel=S.calDay;if(!sel||sel.slice(0,7)!==ym)sel=S.calOff===0?today:null;
+const cells=Array(sd).fill('<span class="cd blank"></span>').concat(Array.from({length:dim},(_,i)=>{const iso=ym+'-'+String(i+1).padStart(2,'0'),ks=[...new Set((ev[iso]||[]).map(e=>e.k))];
+return `<button class="cd ${iso===today?'today':''} ${iso===sel?'sel':''}" data-act="calday" data-id="${iso}"><span>${i+1}</span><span class="dots">${ks.map(k=>`<i class="dt ${k}"></i>`).join('')}</span></button>`}));
+const LB={v:'Verifica',i:'Interrogazioni',p:'Promemoria',m:'Masterclass'};
+return `<div class="row" style="margin-bottom:1rem"><h2 style="margin:0;text-transform:capitalize">${base.toLocaleDateString('it-IT',{month:'long',year:'numeric'})}</h2><span class="sp row"><button class="sm" data-act="calnav" data-id="-1" aria-label="Mese precedente">‹</button><button class="sm" data-act="calnav" data-id="0">Oggi</button><button class="sm" data-act="calnav" data-id="1" aria-label="Mese successivo">›</button></span></div>
+<div class="card"><div class="cal">${DAYS.concat(['Dom']).map(d=>`<span class="wd">${d}</span>`).join('')}${cells.join('')}</div>
+<div class="legend"><span><i class="dt v"></i>Verifiche</span><span><i class="dt i"></i>Interrogazioni</span><span><i class="dt p"></i>Promemoria</span><span><i class="dt m"></i>Masterclass</span></div></div>
+${sel?`<section class="card"><h3>${fmt(sel)}</h3>${(ev[sel]||[]).map(e=>`<div class="item"><i class="dt ${e.k}"></i><span>${esc(e.t)}</span><span class="tag sp">${LB[e.k]}</span></div>`).join('')||'<p class="meta">Niente in programma.</p>'}</section>`:''}`},
+masterclass(){
+const m=can('sess'),bk=can('book'),dl=d=>new Date(d+'T12:00:00').toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+const card=c=>{const st=S.mcst.filter(x=>x.masterclass_id===c.id),mine=st.some(x=>x.user_id===S.me.id),free=Object.values(S.dir).filter(u=>!st.some(x=>x.user_id===u.id));
+return `<article class="card tk m"><div class="row"><span class="tag tm">Masterclass</span><h3>${esc(c.title||'Masterclass')}</h3><span class="meta" style="text-transform:capitalize">${dl(c.mc_date)}</span></div>
+<p style="margin:.4rem 0">Professore: <b>${esc(c.professor)}</b></p>
+<div class="chips" style="margin:.4rem 0 .7rem;flex-wrap:wrap">${st.map(x=>`<span class="tag">${esc(nm(x.user_id))}${m?` <button class="sm del" style="min-height:0;padding:0 .35rem" data-act="mcrem" data-id="${c.id}" data-who="${x.user_id}" aria-label="Togli ${esc(nm(x.user_id))}">×</button>`:''}</span>`).join('')||'<span class="meta">Nessun alunno iscritto.</span>'}</div>
+<div class="row">${bk?(mine?`<button class="del" data-act="mcleave" data-id="${c.id}">Annulla la mia prenotazione</button>`:`<button class="pri" data-act="mcjoin" data-id="${c.id}">Prenotati</button>`):''}
+${m?`<span class="sp row"><select id="mca-${c.id}" style="width:auto" aria-label="Aggiungi alunno">${free.map(u=>`<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select><button class="sm" data-act="mcadd" data-id="${c.id}">Aggiungi</button><button class="sm" data-act="mcedit" data-id="${c.id}">Modifica</button>${delBtn('mcdel',c.id)}</span>`:''}</div></article>`};
+return `<h2>Masterclass</h2>
+${m?`<details class="new card"><summary>＋ Nuova masterclass</summary><form data-form="mc"><div class="g2"><div><label>Data</label><input type="date" name="date" required></div><div><label>Professore</label><input name="p" required maxlength="60"></div></div>
+<label>Titolo (facoltativo)</label><input name="t" maxlength="80"><p class="row"><button class="pri" type="submit">Aggiungi masterclass</button><button type="button" data-act="cancelform">Annulla</button></p></form></details>`:''}
+${arch(S.mcs,c=>c.mc_date,card,'<div class="empty">Nessuna masterclass in programma.</div>')}`},
 orario(){
 const t=S.tt,cls=S.settings.timetable_class;
 const head=`<div class="row" style="margin-bottom:1rem"><h2 style="margin:0">Orario ${esc(cls)}</h2><span class="sp row"><button class="sm" data-act="ttnav" data-id="-1" aria-label="Settimana precedente">‹</button><button class="sm" data-act="ttnav" data-id="0">Oggi</button><button class="sm" data-act="ttnav" data-id="1" aria-label="Settimana successiva">›</button></span></div>`;
@@ -454,9 +542,9 @@ return head+(t.periods.length?grid+list:'<div class="empty">Nessuna lezione trov
 classe(){
 const us=Object.values(S.dir).sort((a,b)=>a.name.localeCompare(b.name,'it'));
 return `<h2>Classe</h2><p class="meta">I profili di tutti i membri registrati.</p>`+us.map(u=>{const me=u.id===S.me.id;
-return `<article class="card"><div class="row"><span class="av">${init(u.name)}</span><div><h3>${esc(u.name)}${me?' (tu)':''}</h3><span class="tag">${ROLES[u.role]}</span></div>${me?'<button class="sm sp" data-go="impostazioni">Modifica profilo</button>':''}</div>
+return `<article class="card"><div class="row">${avt(u.id)}<div><h3>${esc(u.name)}${me?' (tu)':''}</h3><span class="tag">${ROLES[u.role]}</span></div>${staff()&&u.avatar_path&&!me?`<button class="sm del" data-act="avdel" data-id="${u.id}">Rimuovi foto</button>`:''}${canRename(u)?`<button class="sm sp" data-act="renuser" data-id="${u.id}">Modifica nome</button>`:''}${me?'<button class="sm" data-go="impostazioni">Modifica profilo</button>':''}</div>
 <p>${u.bio?esc(u.bio):'<span class="meta">Nessuna descrizione.</span>'}</p>
-<div class="stats"><span>Messaggi inviati: <b>${u.messages_sent||0}</b></span><span>Appunti caricati: <b>${u.notes_sent||0}</b></span><span>Messaggi eliminati: <b>${u.msgs_removed||0}</b></span><span>Appunti eliminati: <b>${u.notes_removed||0}</b></span></div>${conduct(u)}</article>`}).join('')},
+<div class="stats"><span>Messaggi inviati: <b>${u.messages_sent||0}</b></span><span>Appunti caricati: <b>${u.notes_sent||0}</b></span><span>Messaggi eliminati: <b>${u.msgs_removed||0}</b></span><span>Appunti eliminati: <b>${u.notes_removed||0}</b></span><span>Altri contenuti eliminati: <b>${(u.tests_removed||0)+(u.todos_removed||0)+(u.posts_removed||0)+(u.sessions_removed||0)}</b></span></div>${conduct(u)}</article>`}).join('')},
 
 impostazioni(){
 const u=S.dir[S.me.id]||S.me,th=document.documentElement.dataset.theme;
@@ -469,7 +557,9 @@ ${isA()?`<section class="card"><h3>Materie della classe</h3><p class="meta">Comp
 ${SUBJ.map(s=>`<div class="item"><span>${esc(s)}</span><span class="sp row"><button class="sm" data-act="subjren" data-id="${esc(s)}">Rinomina</button><button class="sm del" data-act="subjdel" data-id="${esc(s)}">Rimuovi</button></span></div>`).join('')||'<p class="meta">Nessuna materia: aggiungine una.</p>'}
 <form class="row" data-form="subj" style="margin-top:.8rem"><input name="n" required maxlength="30" placeholder="Nuova materia" style="flex:1" aria-label="Nuova materia"><button class="pri" type="submit">Aggiungi</button></form></section>`:''}
 <section class="card"><h3>Il tuo account</h3>
-<div class="row" style="margin-top:.6rem"><span class="av">${init(S.me.name)}</span><div><b>${esc(S.me.name)}</b><div class="meta">${esc(S.me.email)} · ${ROLES[S.me.role]}</div></div></div>
+<div class="row" style="margin-top:.6rem">${avt(S.me.id)}<div><b>${esc(S.me.name)}</b><div class="meta">${esc(S.me.email)} · ${ROLES[S.me.role]}</div></div></div>
+<div class="row" style="margin:.7rem 0"><label class="btnl">Scegli foto<input id="avfile" type="file" accept="image/*" hidden></label>${u.avatar_path?`<button class="sm del" data-act="avdel" data-id="${S.me.id}">Rimuovi foto</button>`:''}</div>
+<p class="meta">La foto viene ridimensionata a circa 256 px e la vedono solo gli utenti registrati.</p>
 <form data-form="bio"><label for="bio">Descrizione del profilo</label><textarea id="bio" name="b" maxlength="200" placeholder="Scrivi qualcosa su di te (max 200 caratteri)">${esc(u.bio||'')}</textarea>
 <p><button class="pri" type="submit">Salva descrizione</button></p></form>
 <h3 style="margin-top:1rem">La tua condotta</h3>${conduct(u)}
@@ -479,6 +569,24 @@ ${pwForm()}
 };
 
 const ACT={
+async reassign(i){const s=S.sess.find(x=>x.id==i),ids=S.parts.filter(p=>p.session_id==i).map(p=>p.user_id);await q(sb.rpc('set_participants',{p_session:+i,p_users:s.mode==='chosen'?ids:null}));await LOAD.sess()},
+async avdel(i){const u=S.dir[i];if(i!==S.me.id&&!confirm('Rimuovere la foto di '+u.name+'?'))return;
+if(u.avatar_path)await sb.storage.from('avatars').remove([u.avatar_path]);await q(sb.rpc('remove_avatar',{p_user:i}));await Promise.all([LOAD.dir(),LOAD.log()])},
+async mcjoin(i){await q(sb.from('masterclass_students').insert({masterclass_id:+i,user_id:S.me.id}));await LOAD.mc()},
+async mcleave(i){await q(sb.from('masterclass_students').delete().eq('masterclass_id',i).eq('user_id',S.me.id));await LOAD.mc()},
+async mcadd(i){const v=document.getElementById('mca-'+i);if(!v||!v.value)return;await q(sb.from('masterclass_students').insert({masterclass_id:+i,user_id:v.value}));await LOAD.mc()},
+async mcrem(i,b){await q(sb.from('masterclass_students').delete().eq('masterclass_id',i).eq('user_id',b.dataset.who));await LOAD.mc()},
+async mcdel(i){if(!confirm('Eliminare questa masterclass?'))return;await q(sb.from('masterclasses').delete().eq('id',i));await Promise.all([LOAD.mc(),LOAD.log()])},
+async mcedit(i){const c=S.mcs.find(x=>x.id==i),p=prompt('Professore:',c.professor);if(p===null)return;const d=prompt('Data (AAAA-MM-GG):',c.mc_date);if(d===null)return;
+if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return alert('Data non valida.');const t=prompt('Titolo (facoltativo):',c.title||'');
+await q(sb.from('masterclasses').update({professor:p.trim()||c.professor,mc_date:d,title:(t||'').trim()}).eq('id',i));await LOAD.mc()},
+async deltest(i){await q(sb.from('tests').delete().eq('id',i));await Promise.all([LOAD.tests(),LOAD.dir()])},
+async resetcond(i){if(!confirm('Azzerare il livello di condotta di '+nm(i)+'? I contenuti eliminati tornano a 0.'))return;await q(sb.rpc('reset_conduct',{p_user:i}));await LOAD.dir()},
+async renuser(i){const u=S.dir[i],n=prompt('Nuovo nome per '+u.name+':',u.name);if(!n||!n.trim()||n.trim()===u.name)return;
+await q(sb.rpc('rename_user',{p_user:i,p_name:n.trim()}));await Promise.all([LOAD.dir(),LOAD.users(),LOAD.log()])},
+calnav(i){S.calOff=i==='0'?0:S.calOff+Number(i);S.calDay=null},
+calday(i){S.calDay=i},
+cancelform(){},
 async ttnav(i){S.ttOff=i==='0'?0:S.ttOff+Number(i);S.tt=null;S.ttErr='';S.ttDay=null;render();await LOAD.tt()},
 ttday(i){S.ttDay=+i},
 async subjdel(i){if(!confirm('Rimuovere la materia «'+i+'»? Gli appunti già caricati restano.'))return;await q(sb.from('subjects').delete().eq('name',i));await LOAD.subjects()},
@@ -519,18 +627,26 @@ if(p.length<8)return alert('La password deve avere almeno 8 caratteri.');
 await fn({action:'setpw',userId:i,password:p});alert('Password reimpostata. Dovrà cambiarla al prossimo accesso.')}
 };
 const FORMS={
+async mc(f){await q(sb.from('masterclasses').insert({mc_date:f.date.value,professor:f.p.value.trim(),title:f.t.value.trim()}));await Promise.all([LOAD.mc(),LOAD.log()])},
+async test(f){await q(sb.from('tests').insert({subject:f.sub.value,test_date:f.date.value,topic:f.t.value.trim()||null}));await LOAD.tests()},
 async ttclass(f){await q(sb.from('settings').upsert({key:'timetable_class',value:f.c.value.trim()}));await LOAD.settings();S.tt=null;S.ttErr='';S.ttDay=null;alert('Classe aggiornata.');LOAD.tt().then(()=>{if(S.me&&['orario','oggi'].includes(S.view))render()})},
 async subj(f){await q(sb.from('subjects').insert({name:f.n.value.trim()}));await LOAD.subjects()},
 async bio(f){await q(sb.rpc('set_bio',{p_bio:f.b.value.trim()}));await LOAD.dir();alert('Descrizione salvata.')},
-async post(f){await q(sb.from('posts').insert({title:f.t.value,body:f.b.value,category:f.cat.value,pinned:f.pin.value==='1'}));await LOAD.posts()},
-async msg(f){await q(sb.from('messages').insert({body:f.t.value}));await LOAD.msgs()},
-async sess(f){await q(sb.from('exam_sessions').insert({subject:f.sub.value,session_date:f.date.value,mode:f.mode.value,seats:+f.n.value}));await LOAD.sess()},
+async post(f){await q(sb.from('posts').insert({title:f.t.value,body:f.b.value,category:f.cat.value,pinned:f.pin.value==='1',ref_date:f.rd.value||null}));await LOAD.posts()},
+async msg(f){await q(sb.from('messages').insert({body:f.t.value,staff_only:f.to.value==='staff'}));await LOAD.msgs()},
+async sess(f){const mode=f.mode.value;
+if(mode==='book'||mode==='random'){await q(sb.from('exam_sessions').insert({subject:f.sub.value,session_date:f.date.value,mode,seats:+f.n.value||4}));await LOAD.sess();return}
+const ids=[...f.querySelectorAll('input[name=u]:checked')].map(x=>x.value);
+if(mode==='chosen'&&!ids.length){alert('Spunta almeno un alunno.');return false}
+const s=await q(sb.from('exam_sessions').insert({subject:f.sub.value,session_date:f.date.value,mode,seats:1}).select('id').single());
+try{await q(sb.rpc('set_participants',{p_session:s.id,p_users:mode==='chosen'?ids:null}))}catch(e){await sb.from('exam_sessions').delete().eq('id',s.id);throw e}
+await LOAD.sess()},
 async note(f){const fl=f.f.files[0];
 if(!fl||!TYPES.includes(fl.type)){alert('Formato non consentito. Usa PDF, PNG, JPG o WebP.');return false}
 if(fl.size>MAXMB*1048576){alert('Il file supera il limite di '+MAXMB+' MB.');return false}
 const path=S.me.id+'/'+Date.now()+'-'+safe(fl.name);
 await q(sb.storage.from('notes').upload(path,fl,{contentType:fl.type}));
-try{await q(sb.from('notes').insert({title:f.t.value,subject:f.sub.value,file_path:path,file_name:fl.name}))}
+try{await q(sb.from('notes').insert({title:f.t.value,subject:f.sub.value,file_path:path,file_name:fl.name,ref_date:f.rd.value||null}))}
 catch(e){await sb.storage.from('notes').remove([path]);throw e}
 await LOAD.notes()},
 async todo(f){await q(sb.from('todos').insert({title:f.t.value,due:f.due.value,is_public:f.pub.value==='1'}));await LOAD.todos()},
@@ -556,6 +672,8 @@ if(S.busy)return;S.busy=true;
 try{await ACT[b.dataset.act](b.dataset.id,b)}catch(x){alert(errMsg(x))}
 S.busy=false;render()});
 document.addEventListener('change',async e=>{const t=e.target;
+if(t.name==='mode'&&t.form&&t.form.dataset.form==='sess'){t.form.querySelector('.chooser').hidden=t.value!=='chosen';t.form.querySelector('.seatsf').hidden=!['book','random'].includes(t.value)}
+if(t.id==='avfile'&&t.files[0]){await uploadAvatar(t.files[0]);return}
 try{
 if(t.dataset.act==='tick'){await ACT.tick(t.dataset.id);render()}
 if(t.dataset.role){await q(sb.from('profiles').update({role:t.value}).eq('id',t.dataset.role));await Promise.all([LOAD.users(),LOAD.dir(),LOAD.log()]);render()}
@@ -565,7 +683,7 @@ document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;$
 document.addEventListener('submit',async e=>{const f=e.target;if(!f.dataset.form)return;e.preventDefault();if(S.busy)return;S.busy=true;let r;
 try{r=await FORMS[f.dataset.form](f)}catch(x){alert(errMsg(x));r=false}
 S.busy=false;if(r!==false)render()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.rep){S.rep=null;render()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(S.rep||document.querySelector('details.new[open]'))){S.rep=null;render()}});
 boot();
 </script>
 </body>
